@@ -79,7 +79,7 @@
       </div>
       <div>
         <h1>Local-github Builder</h1>
-        <div class="sub">Build & download your image directly from this page (token stays in-memory).</div>
+        <div class="sub">Token optional: empty = broker; filled = direct API.</div>
       </div>
     </div>
     <div class="chips">
@@ -112,9 +112,9 @@
         <input id="branch_ref" value="main">
       </div>
     </div>
-    <label>Personal Access Token (fine-grained; Actions: write, Contents: read)</label>
-    <input id="token" type="password" placeholder="ghp_… (NOT stored)">
-    <div class="footer-note">Used only from your browser to api.github.com; not persisted.</div>
+    <label>Personal Access Token (optional; Actions write, Contents read)</label>
+    <input id="token" type="password" placeholder="leave blank to use broker"/>
+    <div class="footer-note">When blank, the page uses the broker (serverless worker) that holds a secret token.</div>
   </div>
 
   <!-- Build + User -->
@@ -131,7 +131,7 @@
           <select id="cpu_bitrate"></select>
         </div>
       </div>
-      <div class="hint">Sent to Actions as a single field: <code>target_bits</code> → “&lt;build_type&gt; &lt;bitrate&gt;”.</div>
+      <div class="hint">Sent as <code>target_bits</code> → “&lt;build_type&gt; &lt;bitrate&gt;”.</div>
     </div>
 
     <div class="card">
@@ -214,7 +214,7 @@
     <div class="row2">
       <div>
         <button class="btn" id="startBtn" type="button">Start build</button>
-        <div class="footer-note">This page dispatches the workflow, watches it finish, then fetches the artifact.</div>
+        <div class="footer-note">Dispatches the workflow, watches it finish, then fetches the artifact.</div>
       </div>
       <div>
         <button class="btn secondary" id="downloadBtn" type="button" style="display:none">Download OS (.zip)</button>
@@ -233,7 +233,10 @@
 </div>
 
 <script>
-/* ---------------- diagnostics + helpers ---------------- */
+/* ====== CONFIG ====== */
+const BROKER_URL = "https://your-worker.workers.dev"; // <--- put your worker URL
+
+/* ====== helpers ====== */
 function diag(msg){ const d=document.getElementById('diag'); d.textContent=(d.textContent==='—'?'':d.textContent+'\\n')+msg; }
 function setStatus(msg){ document.getElementById('status').textContent=msg; }
 function getOwner(){ return document.getElementById('owner').value.trim(); }
@@ -241,10 +244,13 @@ function getRepo(){ return document.getElementById('repo').value.trim(); }
 function getWorkflowPath(){ return document.getElementById('workflow_path').value.trim(); }
 function getRef(){ return document.getElementById('branch_ref').value.trim() || 'main'; }
 function getToken(){ return document.getElementById('token').value.trim(); }
-function toggleKeyboardCustom(){ document.getElementById('kb_custom_label').style.display=(document.getElementById('keyboard').value==='custom')?'block':'none'; }
-function targetBitsComputed(){ return document.getElementById('build_type').value + ' ' + document.getElementById('cpu_bitrate').value; }
-
-/* ---------------- gather inputs -> single config string ---------------- */
+function toggleKeyboardCustom(){
+  const v=document.getElementById('keyboard').value;
+  document.getElementById('kb_custom_label').style.display=(v==='custom')?'block':'none';
+}
+function targetBitsComputed(){
+  return document.getElementById('build_type').value + ' ' + document.getElementById('cpu_bitrate').value;
+}
 function gatherInputs(){
   const inputs={
     target_bits: targetBitsComputed(),
@@ -268,12 +274,12 @@ function gatherInputs(){
   return inputs;
 }
 
-/* ---------------- GitHub REST wrapper ---------------- */
+/* ====== GitHub direct (when token present) ====== */
 async function gh(method, path, token, body){
   const url=`https://api.github.com${path}`;
   const res=await fetch(url,{
     method,
-    headers:{'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28',...(token?{'Authorization':`Bearer ${token}`}:{})},
+    headers:{'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28','Authorization':`Bearer ${token}`, ...(body?{'Content-Type':'application/json'}:{})},
     body: body?JSON.stringify(body):undefined
   });
   if(!res.ok){
@@ -284,115 +290,111 @@ async function gh(method, path, token, body){
   return res.json();
 }
 
-/* ---------------- UI: select helpers ---------------- */
+/* ====== Broker wrappers (when token empty) ====== */
+async function broker(path, method="GET", body=null) {
+  const url = `${BROKER_URL}${path}`;
+  const res = await fetch(url, { method, headers: body ? {"Content-Type":"application/json"} : {}, body: body ? JSON.stringify(body) : undefined });
+  if (!res.ok) {
+    const txt = await res.text().catch(()=> "");
+    throw new Error(`BROKER ${method} ${path} -> ${res.status}: ${txt}`);
+  }
+  // May be JSON or ZIP (binary)
+  const ct = res.headers.get("Content-Type") || "";
+  if (ct.startsWith("application/zip")) {
+    return res; // caller handles blob
+  }
+  return res.json();
+}
+
+/* ====== options.json ====== */
 function fillSelect(id, arr, placeholder){
   const el=document.getElementById(id);
   el.innerHTML='';
   const opt0=document.createElement('option'); opt0.value=''; opt0.textContent=placeholder||'(select)'; el.appendChild(opt0);
-  (arr||[]).forEach(v=>{ const o=document.createElement('option'); o.value=String(v); o.textContent=String(v); el.appendChild(o); });
+  arr.forEach(v=>{ const o=document.createElement('option'); o.value=String(v); o.textContent=String(v); el.appendChild(o); });
 }
-
-/* ---------------- split config loader ---------------- */
-async function loadJSONOne(url){
-  try{
-    const r=await fetch(`${url}?v=${Date.now()}`,{cache:'no-store'});
-    if(!r.ok) throw new Error(`${r.status}`);
-    return await r.json();
-  }catch(e){
-    diag(`miss ${url} (${e.message||e})`);
-    return null;
-  }
-}
-async function loadSplitConfig(){
-  // try each known file, with aliases where applicable
-  const defaults   = await loadJSONOne('config/defaults.json');
-
-  const buildTypes = (await loadJSONOne('config/build_types.json')) || [];
-  const cpuBits    = (await loadJSONOne('config/cpu_bitrates.json')) || [];
-
-  let countries    = await loadJSONOne('config/wifi_countries.json');
-  if(!countries)   countries = await loadJSONOne('config/country.json');
-
-  let zones        = await loadJSONOne('config/timezones.json');
-  if(!zones)       zones     = await loadJSONOne('config/tz.json');
-
-  let kbs          = await loadJSONOne('config/keyboards.json');
-  if(!kbs)         kbs       = await loadJSONOne('config/kbd.json');
-
-  // normalize to arrays (some files might store objects)
-  const toArr = (x, key)=> Array.isArray(x) ? x : (x && Array.isArray(x[key]) ? x[key] : []);
-  return {
-    defaults: defaults || {},
-    build_types: toArr(buildTypes,'build_types'),
-    cpu_bitrates: toArr(cpuBits,'cpu_bitrates'),
-    wifi_countries: toArr(countries,'wifi_countries') || toArr(countries,'country'),
-    timezones: toArr(zones,'timezones') || toArr(zones,'tz'),
-    keyboards: toArr(kbs,'keyboards') || toArr(kbs,'kbd')
-  };
-}
-
-/* ---------------- populate selects using split files ---------------- */
 async function loadOptions(){
-  const cfg = await loadSplitConfig();
+  const urls=[`config/options.json?v=${Date.now()}`,`./config/options.json?v=${Date.now()}`,`/config/options.json?v=${Date.now()}`];
+  let js=null,lastErr='';
+  for(const u of urls){
+    try{ const r=await fetch(u,{cache:'no-store'}); if(r.ok){ js=await r.json(); diag(`Loaded ${u}`); break; } else lastErr=`${u} -> ${r.status}`; }
+    catch(e){ lastErr=`${u} -> ${e}`; }
+  }
+  if(!js){ diag(`Could not load options.json (${lastErr}). Using minimal built-ins.`); js={}; }
 
-  // fallbacks if any missing
-  const buildTypes = cfg.build_types.length ? cfg.build_types : ["pi","pi-4","pi-5","pc"];
-  const cpuBits    = cfg.cpu_bitrates.length ? cfg.cpu_bitrates : ["64bit","32bit"];
-  const countries  = cfg.wifi_countries.length ? cfg.wifi_countries : ["AU","US","GB","NZ","CA"];
-  const zones      = cfg.timezones.length ? cfg.timezones : ["Australia/Sydney","UTC","Europe/London","America/New_York"];
-  const kbs        = cfg.keyboards.length ? cfg.keyboards : ["au","us","gb","us(intl)","custom"];
+  const defaults=js.defaults||{};
+  const buildTypes=js.build_types||["pi"];
+  const cpuBits=js.cpu_bitrates||["64bit","32bit"];
+  const countries=js.wifi_countries||js.country||["AU","US","GB","NZ","CA"];
+  const zones=js.timezones||js.tz||["Australia/Sydney","UTC","Europe/London","America/New_York"];
+  const kbs=js.keyboards||js.kbd||["au","us","gb","us(intl)","custom"];
 
-  fillSelect('build_type', buildTypes, '(build type)');
+  fillSelect('build_type', buildTypes, '(build type)'); 
   fillSelect('cpu_bitrate', cpuBits, '(bitrate)');
   fillSelect('wifi_country', countries, '(Wi-Fi country)');
   fillSelect('timezone', zones, '(Timezone)');
   fillSelect('keyboard', kbs, '(Keyboard)');
 
-  const d = cfg.defaults || {};
-  if(d.build_type) document.getElementById('build_type').value=d.build_type;
-  if(d.cpu_bitrate) document.getElementById('cpu_bitrate').value=d.cpu_bitrate;
-
-  // plain values
-  ['user_name','user_password','wifi_ssid','wifi_password','static_ip','gateway','dns','keyboard_custom']
-    .forEach(id=>{ if(d[id]) document.getElementById(id).value=d[id]; });
-
-  // selects with defaults
-  if(d.wifi_country) document.getElementById('wifi_country').value=d.wifi_country;
-  if(d.timezone) document.getElementById('timezone').value=d.timezone;
-  if(d.keyboard) document.getElementById('keyboard').value=d.keyboard;
-
-  // ssh defaults
-  if(d.ssh_permit_root_login) document.getElementById('ssh_prl').value=d.ssh_permit_root_login;
-  if(d.ssh_password_auth) document.getElementById('ssh_pa').value=d.ssh_password_auth;
-  if(d.ssh_pubkey_auth) document.getElementById('ssh_pk').value=d.ssh_pubkey_auth;
-
+  // apply defaults if present
+  if(defaults.build_type){ document.getElementById('build_type').value=defaults.build_type; }
+  if(defaults.cpu_bitrate){ document.getElementById('cpu_bitrate').value=defaults.cpu_bitrate; }
+  if(defaults.user_name){ document.getElementById('user_name').value=defaults.user_name; }
+  if(defaults.user_password){ document.getElementById('user_password').value=defaults.user_password; }
+  if(defaults.wifi_ssid){ document.getElementById('wifi_ssid').value=defaults.wifi_ssid; }
+  if(defaults.wifi_password){ document.getElementById('wifi_password').value=defaults.wifi_password; }
+  if(defaults.ssh_permit_root_login){ document.getElementById('ssh_prl').value=defaults.ssh_permit_root_login; }
+  if(defaults.ssh_password_auth){ document.getElementById('ssh_pa').value=defaults.ssh_password_auth; }
+  if(defaults.ssh_pubkey_auth){ document.getElementById('ssh_pk').value=defaults.ssh_pubkey_auth; }
+  if(defaults.static_ip){ document.getElementById('static_ip').value=defaults.static_ip; }
+  if(defaults.gateway){ document.getElementById('gateway').value=defaults.gateway; }
+  if(defaults.dns){ document.getElementById('dns').value=defaults.dns; }
+  if(defaults.wifi_country){ document.getElementById('wifi_country').value=defaults.wifi_country; }
+  if(defaults.timezone){ document.getElementById('timezone').value=defaults.timezone; }
+  if(defaults.keyboard){ document.getElementById('keyboard').value=defaults.keyboard; }
+  if(defaults.keyboard_custom){ document.getElementById('keyboard_custom').value=defaults.keyboard_custom; }
   toggleKeyboardCustom();
 }
 loadOptions();
 
-/* ---------------- dispatch + poll + download ---------------- */
+/* ====== dispatch + poll + download ====== */
 async function dispatchWorkflow(){
   const owner=getOwner(), repo=getRepo(), token=getToken(), ref=getRef(), path=getWorkflowPath();
-  if(!owner||!repo||!token) throw new Error('Missing Owner, Repo or Token');
-  const config=gatherInputs();
-  const body={ref, inputs:{config: JSON.stringify(config)}};
-  const wfPathEncoded=encodeURIComponent(path);
-  await gh('POST', `/repos/${owner}/${repo}/actions/workflows/${wfPathEncoded}/dispatches`, token, body);
-  return body;
+  const inputs=gatherInputs();
+
+  if (token) {
+    const wfPathEncoded=encodeURIComponent(path);
+    await gh('POST', `/repos/${owner}/${repo}/actions/workflows/${wfPathEncoded}/dispatches`, token,
+             { ref, inputs: { config: JSON.stringify(inputs) } });
+    return { owner, repo, ref };
+  }
+
+  // broker
+  await broker(`/dispatch`, "POST", { owner, repo, workflow_path: path, ref, inputs });
+  return { owner, repo, ref };
 }
-async function findRecentRunId(afterISO){
-  const owner=getOwner(), repo=getRepo(), token=getToken();
-  const list=await gh('GET', `/repos/${owner}/${repo}/actions/runs?event=workflow_dispatch&per_page=10`, token);
-  const runs=(list.workflow_runs||[]).filter(r=> new Date(r.created_at) >= new Date(afterISO));
-  const ref=getRef();
-  const match=runs.find(r=> r.head_branch===ref);
-  return match?match.id:null;
+
+async function findRecentRunId(startedAtISO){
+  const owner=getOwner(), repo=getRepo(), token=getToken(), ref=getRef();
+
+  if (token) {
+    const list = await gh('GET', `/repos/${owner}/${repo}/actions/runs?event=workflow_dispatch&per_page=20`, token);
+    const runs=(list.workflow_runs||[]).filter(r=> new Date(r.created_at) >= new Date(startedAtISO) && r.head_branch===ref);
+    return runs[0]?.id || null;
+  } else {
+    const list = await broker(`/runs?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}&ref=${encodeURIComponent(ref)}`, "GET");
+    const runs=(list.runs||[]).filter(r=> new Date(r.created_at) >= new Date(startedAtISO));
+    return runs[0]?.id || null;
+  }
 }
+
 async function waitForRun(runId,onTick){
   const owner=getOwner(), repo=getRepo(), token=getToken();
   let delay=4000,maxDelay=15000;
   while(true){
-    const run=await gh('GET', `/repos/${owner}/${repo}/actions/runs/${runId}`, token);
+    const run = token
+      ? await gh('GET', `/repos/${owner}/${repo}/actions/runs/${runId}`, token)
+      : await broker(`/run/${runId}?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}`, "GET");
+
     onTick?.(run);
     if(run.status==='completed'){
       if(run.conclusion!=='success') throw new Error(`Run completed with conclusion=${run.conclusion}`);
@@ -402,40 +404,57 @@ async function waitForRun(runId,onTick){
     delay=Math.min(maxDelay,Math.floor(delay*1.25));
   }
 }
+
 async function getFirstArtifact(runId){
   const owner=getOwner(), repo=getRepo(), token=getToken();
-  const arts=await gh('GET', `/repos/${owner}/${repo}/actions/runs/${runId}/artifacts`, token);
-  if(!arts || !arts.artifacts || !arts.artifacts.length) throw new Error('No artifacts found on the run.');
-  const preferred=arts.artifacts.find(a=> a.name.toLowerCase().includes('local-github')) || arts.artifacts[0];
-  return preferred;
-}
-async function downloadArtifactZip(artifact){
-  const owner=getOwner(), repo=getRepo(), token=getToken();
-  const res=await fetch(`https://api.github.com/repos/${owner}/${repo}/actions/artifacts/${artifact.id}/zip`,{
-    headers:{'Accept':'application/vnd.github+json','Authorization':`Bearer ${token}`,'X-GitHub-Api-Version':'2022-11-28'}
-  });
-  if(!res.ok) throw new Error(`Download ZIP -> ${res.status} ${res.statusText}`);
-  const blob=await res.blob();
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  const ts=new Date().toISOString().replace(/[:.]/g,'-');
-  a.href=url; a.download=`${artifact.name||'artifact'}-${ts}.zip`;
-  document.body.appendChild(a); a.click(); a.remove();
-  URL.revokeObjectURL(url);
+  const data = token
+    ? await gh('GET', `/repos/${owner}/${repo}/actions/runs/${runId}/artifacts`, token)
+    : await broker(`/artifacts/${runId}?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}`, "GET");
+
+  const artifacts = data.artifacts || [];
+  if (!artifacts.length) throw new Error('No artifacts found on the run.');
+  return artifacts.find(a => (a.name||"").toLowerCase().includes('local-github')) || artifacts[0];
 }
 
-/* ---------------- UI events ---------------- */
+async function downloadArtifactZip(artifact){
+  const owner=getOwner(), repo=getRepo(), token=getToken();
+
+  if (token) {
+    const res=await fetch(`https://api.github.com/repos/${owner}/${repo}/actions/artifacts/${artifact.id}/zip`,{
+      headers:{'Accept':'application/vnd.github+json','Authorization':`Bearer ${token}`,'X-GitHub-Api-Version':'2022-11-28'}
+    });
+    if(!res.ok) throw new Error(`Download ZIP -> ${res.status} ${res.statusText}`);
+    const blob=await res.blob();
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    const ts=new Date().toISOString().replace(/[:.]/g,'-');
+    a.href=url; a.download=`${artifact.name||'artifact'}-${ts}.zip`;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  } else {
+    const res = await broker(`/artifact/${artifact.id}/zip?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}`, "GET");
+    const blob=await res.blob();
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    const ts=new Date().toISOString().replace(/[:.]/g,'-');
+    a.href=url; a.download=`${artifact.name||'artifact'}-${ts}.zip`;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  }
+}
+
+/* ====== UI ====== */
 document.getElementById('startBtn').addEventListener('click', async ()=>{
   try{
     document.getElementById('downloadBtn').style.display='none';
     document.getElementById('downloadInfo').textContent='';
-    setStatus('Dispatching workflow…');
+    setStatus(getToken() ? 'Dispatching (direct)…' : 'Dispatching via broker…');
     const startedAt=new Date().toISOString();
 
-    const payload=await dispatchWorkflow();
-    diag('Dispatched with payload: '+JSON.stringify(payload));
+    await dispatchWorkflow();
+    diag('Dispatched.');
 
-    setStatus('Looking for the run…');
+    setStatus('Locating run…');
     let runId=null;
     for(let i=0;i<12;i++){
       runId=await findRecentRunId(startedAt);
@@ -444,8 +463,8 @@ document.getElementById('startBtn').addEventListener('click', async ()=>{
     }
     if(!runId) throw new Error('Could not find the workflow run after dispatch.');
 
-    setStatus(`Run #${runId} in progress… (build may take a while)`);
-    await waitForRun(runId,(run)=>{ setStatus(`Run #${run.id}: ${run.status} — ${run.head_branch}`); });
+    setStatus(`Run #${runId} in progress…`);
+    await waitForRun(runId,(run)=>{ setStatus(`Run #${run.id}: ${run.status}`); });
 
     setStatus('Run succeeded. Collecting artifact…');
     const art=await getFirstArtifact(runId);
@@ -459,6 +478,17 @@ document.getElementById('startBtn').addEventListener('click', async ()=>{
     setStatus('Error. See diagnostics.'); diag('ERROR: '+e.message);
   }
 });
+
+/* ====== minimal defaults (if config/options.json missing) ====== */
+(function minimalDefaults(){
+  const f = (id, v) => { const el=document.getElementById(id); if(el) el.value=v; };
+  // You can remove these if options.json always exists
+  fillSelect('build_type', ["pi","pc"], '(build type)');
+  fillSelect('cpu_bitrate', ["64bit","32bit"], '(bitrate)');
+  fillSelect('wifi_country', ["AU","US","GB","NZ","CA"], '(Wi-Fi country)');
+  fillSelect('timezone', ["Australia/Sydney","UTC","Europe/London","America/New_York"], '(Timezone)');
+  fillSelect('keyboard', ["us","au","gb","us(intl)","custom"], '(Keyboard)');
+})();
 </script>
 </body>
 </html>
