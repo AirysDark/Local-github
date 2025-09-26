@@ -3,21 +3,16 @@
     "build_type": "pi",
     "cpu_bitrate": "64bit",
     "target_bits": "pi 64bit",
-
     "user_name": "AirysDark",
     "user_password": "Zombie1986X2",
-
     "wifi_ssid": "Raspbain",
     "wifi_password": "Zombie1986X2",
-
     "ssh_permit_root_login": "yes",
     "ssh_password_auth": "yes",
     "ssh_pubkey_auth": "yes",
-
     "static_ip": "192.168.0.8",
     "gateway": "192.168.0.1",
     "dns": "1.1.1.1;8.8.8.8",
-
     "wifi_country": "AU",
     "timezone": "Australia/Sydney",
     "keyboard": "us",
@@ -31,38 +26,30 @@
     "pi-3",
     "pi-4",
     "pi-5",
-
     "pc",
     "x86_64",
     "i386",
-
     "armhf-generic",
     "arm64-generic",
     "riscv64-generic",
-
-    "jetson",          // NVIDIA Jetson (TX1/TX2/Nano/Xavier/Orin)
-    "rockchip",        // RK3328/RK3399 etc.
-    "allwinner",       // H3/H5/H6 etc.
-    "amlogic",         // S905/S912/S922X etc.
-
+    "jetson",
+    "rockchip",
+    "allwinner",
+    "amlogic",
     "beaglebone",
     "odroid",
     "pine64",
     "nanopi",
     "bananapi",
     "orangepi",
-
     "imx6",
     "imx8",
-
-    "qemu",            // headless VM image
+    "qemu",
     "virtualbox",
     "vmware",
-
-    "chromebook",      // generic ChromeOS device (custom Linux image)
-
-    "android-aosp",    // AOSP build target
-    "android-lineage"  // LineageOS build target
+    "chromebook",
+    "android-aosp",
+    "android-lineage"
   ],
 
   "cpu_bitrates": ["64bit", "32bit"],
@@ -78,9 +65,9 @@
   ],
 
   "ssh": [
-    { "permit_root_login": "yes",                "password_auth": "yes", "pubkey_auth": "yes", "label": "true:true:true" },
-    { "permit_root_login": "prohibit-password",  "password_auth": "yes", "pubkey_auth": "yes", "label": "prohibit-password:true:true" },
-    { "permit_root_login": "no",                 "password_auth": "no",  "pubkey_auth": "yes", "label": "no:false:true" }
+    { "permit_root_login": "yes",               "password_auth": "yes", "pubkey_auth": "yes", "label": "true:true:true" },
+    { "permit_root_login": "prohibit-password", "password_auth": "yes", "pubkey_auth": "yes", "label": "prohibit-password:true:true" },
+    { "permit_root_login": "no",                "password_auth": "no",  "pubkey_auth": "yes", "label": "no:false:true" }
   ],
 
   "net": [
@@ -112,3 +99,4 @@
     "us","us(intl)","us(altgr-intl)","us(colemak)","us(colemak-dh)","us(dvorak)","us(workman)","us(mac)","au","gb","ie","ca","ca(fr)","latam","br","es","pt","pt(mac)","fr","fr(azerty)","ch","be","it","de","de(nodeadkeys)","pl","cz","sk","hu","ro","bg","ru","ru(phonetic)","ua","srp","hr","si","ba","mk","al","el","tr","tr(f)","ku","se","no","dk","fi","is","nl","lu","li","ee","lv","lt","lt(ibm)","gr","mt","md","il","ara","ir","pk","in","bd","lk","np","th","lo","km","vi","my","cn","tw","hk","jp","kr","za","ng","gh","tz","ke","ma","tn","dz","eg","custom"
   ]
 }
+```0
