@@ -1,0 +1,8 @@
+{
+  "hostname": "__HOSTNAME__",
+  "username": "__USERNAME__",
+  "password": "__USERPASS__",
+  "wlan": { "ssid": "__WIFI_SSID__", "password": "__WIFI_PASSWORD__", "country": "__WIFI_COUNTRY__" },
+  "locale": { "language": "en", "keyboard": "__KEYBOARD__", "timezone": "__TIMEZONE__" },
+  "ssh": { "enabled": true }
+}

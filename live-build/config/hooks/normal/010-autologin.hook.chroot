@@ -1,2 +1,31 @@
 #!/bin/bash
-# Autologin and menu setup for PC ISO
+set -e
+
+# Create user 'chip' and enable root
+useradd -m -s /bin/bash chip || true
+echo "chip:raspberry" | chpasswd
+usermod -aG sudo chip
+echo "root:root" | chpasswd
+
+# Install shared payload from /tmp/payload
+install -D /tmp/payload/usr/local/bin/chip-menu /usr/local/bin/chip-menu
+chmod +x /usr/local/bin/chip-menu
+install -D /tmp/payload/etc/systemd/system/chip-menu.service /etc/systemd/system/chip-menu.service
+install -D /tmp/payload/etc/systemd/system/getty@tty1.service.d/override.conf /etc/systemd/system/getty@tty1.service.d/override.conf
+
+# SSH custom config fragment (already placed by includes.chroot, but ensure)
+install -D /tmp/payload/etc/ssh/sshd_config.d/local-github.conf /etc/ssh/sshd_config.d/local-github.conf || true
+
+systemctl enable chip-menu.service
+
+# NetworkManager static IPv4
+install -d /etc/NetworkManager/system-connections
+if [ -f /tmp/payload/etc/NetworkManager/system-connections/lan.nmconnection ]; then
+  cp /tmp/payload/etc/NetworkManager/system-connections/lan.nmconnection /etc/NetworkManager/system-connections/lan.nmconnection
+  chmod 600 /etc/NetworkManager/system-connections/lan.nmconnection
+fi
+
+# Locale minimal
+sed -i 's/^# \(en_AU\.UTF-8\)/\1/' /etc/locale.gen || true
+sed -i 's/^# \(en_US\.UTF-8\)/\1/' /etc/locale.gen || true
+locale-gen || true

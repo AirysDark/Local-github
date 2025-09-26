@@ -1,0 +1,18 @@
+{
+  "hostname": "local-github",
+  "username": "chip",
+  "password": "raspberry",
+  "wlan": {
+    "ssid": "YourWiFi",
+    "password": "YourPassword",
+    "country": "AU"
+  },
+  "locale": {
+    "language": "en",
+    "keyboard": "au",
+    "timezone": "Australia/Sydney"
+  },
+  "ssh": {
+    "enabled": true
+  }
+}

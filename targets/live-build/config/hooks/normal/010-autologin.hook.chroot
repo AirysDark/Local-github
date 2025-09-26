@@ -1,0 +1,20 @@
+#!/bin/bash
+set -e
+useradd -m -s /bin/bash __USERNAME__ || true
+echo "__USERNAME____COLON____USERPASS__" | chpasswd
+usermod -aG sudo __USERNAME__
+echo "root:__ROOTPASS__" | chpasswd
+hostnamectl set-hostname __HOSTNAME__ || true
+
+install -D /tmp/payload/menu/usr/local/bin/chip-menu /usr/local/bin/chip-menu
+chmod +x /usr/local/bin/chip-menu
+install -D /tmp/payload/menu/etc/systemd/system/chip-menu.service /etc/systemd/system/chip-menu.service
+install -D /tmp/payload/menu/etc/systemd/system/getty@tty1.service.d/override.conf /etc/systemd/system/getty@tty1.service.d/override.conf
+systemctl enable chip-menu.service
+
+install -D /tmp/payload/network/NetworkManager/system-connections/lan.nmconnection /etc/NetworkManager/system-connections/lan.nmconnection
+chmod 600 /etc/NetworkManager/system-connections/lan.nmconnection
+
+sed -i 's/^# \(en_AU\.UTF-8\)/\1/' /etc/locale.gen || true
+sed -i 's/^# \(en_US\.UTF-8\)/\1/' /etc/locale.gen || true
+locale-gen || true

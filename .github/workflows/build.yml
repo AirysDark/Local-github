@@ -1,62 +1,167 @@
-name: Build Chip OS (Pi or PC)
+name: Build Local-github (All targets with config)
 
 on:
   workflow_dispatch:
     inputs:
       target:
-        description: "pi or pc"
-        required: false
-        default: "pi"
-  push:
-    branches: [ main ]
+        type: choice
+        description: "Build target"
+        options:
+          - pi
+          - pc
+          - arm64
+          - armhf
+          - riscv64
+          - i386
+          - i860
+        default: pi
+      hostname:
+        description: "Hostname"
+        default: local-github
+      username:
+        description: "Console username"
+        default: chip
+      user_password:
+        description: "User password"
+        default: raspberry
+      root_password:
+        description: "Root password"
+        default: root
+      wifi_ssid:
+        description: "Wi-Fi SSID"
+        default: YourWiFi
+      wifi_password:
+        description: "Wi-Fi password"
+        default: YourPassword
+      wifi_country:
+        description: "Wi-Fi country code"
+        default: AU
+      timezone:
+        description: "Timezone (e.g., Australia/Sydney)"
+        default: Australia/Sydney
+      keyboard:
+        description: "Keyboard layout (e.g., au)"
+        default: au
+      static_ip:
+        description: "Static IPv4 (eth0)"
+        default: 192.168.1.50
+      gateway:
+        description: "Gateway IPv4"
+        default: 192.168.1.1
+      dns:
+        description: "DNS servers (semicolon-separated)"
+        default: 1.1.1.1;8.8.8.8
+      permit_root_login:
+        type: choice
+        description: "SSH: PermitRootLogin"
+        options: [yes, prohibit-password, no]
+        default: yes
+      password_auth:
+        type: choice
+        description: "SSH: PasswordAuthentication"
+        options: [yes, no]
+        default: yes
+      pubkey_auth:
+        type: choice
+        description: "SSH: PubkeyAuthentication"
+        options: [yes, no]
+        default: yes
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        target: [ ${{ github.event.inputs.target || 'pi' }} ]
-      fail-fast: false
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Stage shared payload
+      - name: Prepare configs from inputs
+        env:
+          HOSTNAME: ${{ github.event.inputs.hostname }}
+          USERNAME: ${{ github.event.inputs.username }}
+          USERPASS: ${{ github.event.inputs.user_password }}
+          ROOTPASS: ${{ github.event.inputs.root_password }}
+          WIFI_SSID: ${{ github.event.inputs.wifi_ssid }}
+          WIFI_PASSWORD: ${{ github.event.inputs.wifi_password }}
+          WIFI_COUNTRY: ${{ github.event.inputs.wifi_country }}
+          TIMEZONE: ${{ github.event.inputs.timezone }}
+          KEYBOARD: ${{ github.event.inputs.keyboard }}
+          STATIC_IP: ${{ github.event.inputs.static_ip }}
+          GATEWAY: ${{ github.event.inputs.gateway }}
+          DNS: ${{ github.event.inputs.dns }}
+          PERMIT_ROOT_LOGIN: ${{ github.event.inputs.permit_root_login }}
+          PASSWORD_AUTH: ${{ github.event.inputs.password_auth }}
+          PUBKEY_AUTH: ${{ github.event.inputs.pubkey_auth }}
         run: |
-          mkdir -p live-build/config/includes.chroot/tmp/payload
-          rsync -a menu/ live-build/config/includes.chroot/tmp/payload/
+          set -e
+          echo "::group::Stage shared payload"
+          mkdir -p targets/live-build/config/includes.chroot/tmp/payload
+          rsync -a shared/ targets/live-build/config/includes.chroot/tmp/payload/
+          rsync -a shared/ targets/pi-gen/stage4/05-chip-base/files/
+          echo "::endgroup::"
 
-      - name: Build for Raspberry Pi (arm64)
-        if: matrix.target == 'pi'
+          echo "::group::Substitute placeholders"
+          find . -type f \
+            \( -path './shared/*' -o -path './targets/*' \) \
+            -exec sed -i \
+              -e "s/__HOSTNAME__/${HOSTNAME}/g" \
+              -e "s/__USERNAME__/${USERNAME}/g" \
+              -e "s/__USERPASS__/${USERPASS}/g" \
+              -e "s/__ROOTPASS__/${ROOTPASS}/g" \
+              -e "s/__WIFI_SSID__/${WIFI_SSID}/g" \
+              -e "s/__WIFI_PASSWORD__/${WIFI_PASSWORD}/g" \
+              -e "s/__WIFI_COUNTRY__/${WIFI_COUNTRY}/g" \
+              -e "s#__TIMEZONE__#${TIMEZONE}#g" \
+              -e "s/__KEYBOARD__/${KEYBOARD}/g" \
+              -e "s/__STATIC_IP__/${STATIC_IP}/g" \
+              -e "s/__GATEWAY__/${GATEWAY}/g" \
+              -e "s/__DNS__/${DNS}/g" \
+              -e "s/__PERMIT_ROOT_LOGIN__/${PERMIT_ROOT_LOGIN}/g" \
+              -e "s/__PASSWORD_AUTH__/${PASSWORD_AUTH}/g" \
+              -e "s/__PUBKEY_AUTH__/${PUBKEY_AUTH}/g" \
+              -e "s/__USERNAME__COLON__/${USERNAME}:/g" \
+              {} +
+          echo "::endgroup::"
+      - name: Build Raspberry Pi (pi)
+        if: ${{ github.event.inputs.target == 'pi' }}
         uses: usimd/pi-gen-action@v1
         with:
           release: bookworm
-          image_name: chip-os
+          image_name: Local-github
           enable_ssh: true
           stage_list: "stage0 stage1 stage2 stage4"
           deploy_compression: xz
           deploy_compression_level: 9
           deploy_zip: true
-
       - name: Upload Pi artifact
-        if: matrix.target == 'pi'
+        if: ${{ github.event.inputs.target == 'pi' }}
         uses: actions/upload-artifact@v4
         with:
-          name: chip-os-pi-arm64
+          name: Local-github-pi-arm64
           path: deploy/*
 
-      - name: Build for PC (x86_64) via live-build
-        if: matrix.target == 'pc'
+      - name: Build PC ISO (live-build)
+        if: ${{ github.event.inputs.target == 'pc' }}
         run: |
           sudo apt-get update
           sudo apt-get install -y live-build debootstrap syslinux isolinux
-          cd live-build
+          cd targets/live-build
           lb config --architecture amd64 --distribution bookworm --mode debian             --binary-images iso-hybrid --debian-installer live --apt-recommends false
           sudo lb build
-
       - name: Upload PC artifact
-        if: matrix.target == 'pc'
+        if: ${{ github.event.inputs.target == 'pc' }}
         uses: actions/upload-artifact@v4
         with:
-          name: chip-os-pc-amd64
-          path: live-build/live-image-amd64.hybrid.iso
+          name: Local-github-pc-amd64
+          path: targets/live-build/live-image-amd64.hybrid.iso
+
+      - name: Build generic image (arm64/armhf/riscv64/i386)
+        if: ${{ contains('arm64,armhf,riscv64,i386', github.event.inputs.target) }}
+        run: |
+          echo "Generic targets currently not parameterized via placeholders."
+          echo "You can adapt targets/generic/build-generic.sh similarly if needed."
+          exit 0
+
+      - name: i860 placeholder
+        if: ${{ github.event.inputs.target == 'i860' }}
+        run: |
+          echo "i860 placeholder build."
+          exit 0

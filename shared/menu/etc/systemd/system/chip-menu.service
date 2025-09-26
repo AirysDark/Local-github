@@ -1,12 +1,12 @@
 [Unit]
-Description=Local-github Console Menu
+Description=__HOSTNAME__ Console Menu
 After=getty@tty1.service
 Wants=getty@tty1.service
 
 [Service]
 Type=idle
-User=chip
-WorkingDirectory=/home/chip
+User=__USERNAME__
+WorkingDirectory=/home/__USERNAME__
 Environment=TERM=linux
 TTYPath=/dev/tty1
 StandardInput=tty
