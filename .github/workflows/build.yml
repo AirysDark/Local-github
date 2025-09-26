@@ -1,4 +1,4 @@
-name: Build Local-github (Pi ? Clean)
+name: Build Local-github (Pi Clean)
 
 on:
   workflow_dispatch:
@@ -76,9 +76,8 @@ jobs:
           BIT="${SEL##* }"
           echo "target=$TARGET" >> "$GITHUB_OUTPUT"
           echo "bit_type=$BIT"  >> "$GITHUB_OUTPUT"
-          echo "Selected: target=$TARGET bit_type=$BIT"
 
-      - name: Compute architectures
+      - name: Compute Pi arch from bitness
         id: arch
         shell: bash
         run: |
@@ -137,10 +136,10 @@ jobs:
           echo "password_auth=$PA"       >> "$GITHUB_OUTPUT"
           echo "pubkey_auth=$PK"         >> "$GITHUB_OUTPUT"
 
-      - name: Prepare overlay files and stage script
+      - name: Prepare overlay files
+        if: ${{ steps.tgt.outputs.target == 'pi' }}
         shell: bash
         env:
-          HOSTNAME:           ${{ github.event.inputs.wifi_country }}-${{ steps.tgt.outputs.bit_type }}
           WIFI_COUNTRY:       ${{ github.event.inputs.wifi_country }}
           TIMEZONE:           ${{ github.event.inputs.timezone }}
           KEYBOARD:           ${{ github.event.inputs.keyboard }}
@@ -193,9 +192,7 @@ EOF
           cat > "$BASE/00-run.sh" <<'EOS'
 #!/bin/bash
 set -e
-# hostname (optional; build-time HOSTNAME_VAL can be added similarly)
 systemctl enable ssh || true
-# ensure dhcpcd drop-ins are loaded
 if [ -d /etc/dhcpcd.conf.d ]; then
   grep -q '^include /etc/dhcpcd.conf.d' /etc/dhcpcd.conf || echo 'include /etc/dhcpcd.conf.d/*.conf' >> /etc/dhcpcd.conf
 fi
@@ -218,5 +215,5 @@ EOS
         if: ${{ steps.tgt.outputs.target == 'pi' }}
         uses: actions/upload-artifact@v4
         with:
-          name: "Local-github-pi"   # keep this static to avoid YAML/expression weirdness
+          name: "Local-github-pi"
           path: deploy/*
