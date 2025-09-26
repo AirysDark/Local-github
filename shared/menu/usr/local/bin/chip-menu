@@ -6,7 +6,7 @@ PA=$(grep -s '^PasswordAuthentication' /etc/ssh/sshd_config.d/local-github.conf 
 PK=$(grep -s '^PubkeyAuthentication' /etc/ssh/sshd_config.d/local-github.conf | awk '{print $2}' || echo "yes")
 
 while true; do
-  CHOICE=$(whiptail --title "Local-github Menu" --menu "Choose an action" 18 64 8     "1" "Open shell"     "2" "Reboot"     "3" "Power off"     "i" "Info / About (SSH & Network)" 3>&1 1>&2 2>&3) || exit 0
+  CHOICE=$(whiptail --title "Local-github Menu" --menu "Choose an action" 18 64 8         "1" "Open shell"         "2" "Reboot"         "3" "Power off"         "i" "Info / About (SSH & Network)" 3>&1 1>&2 2>&3) || exit 0
 
   case "$CHOICE" in
     1) exec bash ;;
