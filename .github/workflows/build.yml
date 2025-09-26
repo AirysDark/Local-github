@@ -1,4 +1,4 @@
-name: Build Local-github (All targets with full dropdowns)
+name: Build Local-github (TZ + Bit-type)
 
 on:
   workflow_dispatch:
@@ -15,6 +15,13 @@ on:
           - i386
           - i860
         default: pi
+      bit_type:
+        type: choice
+        description: "CPU bitness / architecture family"
+        options:
+          - 64bit
+          - 32bit
+        default: 64bit
       hostname:
         description: "Hostname"
         default: local-github
@@ -34,355 +41,579 @@ on:
         description: "Wi‑Fi password"
         default: YourPassword
       wifi_country:
-        type: choice
         description: "Wi‑Fi country code (ISO 3166‑1 alpha‑2)"
-        options:
-          - AF
-          - AX
-          - AL
-          - DZ
-          - AS
-          - AD
-          - AO
-          - AI
-          - AQ
-          - AG
-          - AR
-          - AM
-          - AW
-          - AU
-          - AT
-          - AZ
-          - BS
-          - BH
-          - BD
-          - BB
-          - BY
-          - BE
-          - BZ
-          - BJ
-          - BM
-          - BT
-          - BO
-          - BQ
-          - BA
-          - BW
-          - BV
-          - BR
-          - IO
-          - BN
-          - BG
-          - BF
-          - BI
-          - CV
-          - KH
-          - CM
-          - CA
-          - KY
-          - CF
-          - TD
-          - CL
-          - CN
-          - CX
-          - CC
-          - CO
-          - KM
-          - CG
-          - CD
-          - CK
-          - CR
-          - CI
-          - HR
-          - CU
-          - CW
-          - CY
-          - CZ
-          - DK
-          - DJ
-          - DM
-          - DO
-          - EC
-          - EG
-          - SV
-          - GQ
-          - ER
-          - EE
-          - SZ
-          - ET
-          - FK
-          - FO
-          - FJ
-          - FI
-          - FR
-          - GF
-          - PF
-          - TF
-          - GA
-          - GM
-          - GE
-          - DE
-          - GH
-          - GI
-          - GR
-          - GL
-          - GD
-          - GP
-          - GU
-          - GT
-          - GG
-          - GN
-          - GW
-          - GY
-          - HT
-          - HM
-          - VA
-          - HN
-          - HK
-          - HU
-          - IS
-          - IN
-          - ID
-          - IR
-          - IQ
-          - IE
-          - IM
-          - IL
-          - IT
-          - JM
-          - JP
-          - JE
-          - JO
-          - KZ
-          - KE
-          - KI
-          - KP
-          - KR
-          - KW
-          - KG
-          - LA
-          - LV
-          - LB
-          - LS
-          - LR
-          - LY
-          - LI
-          - LT
-          - LU
-          - MO
-          - MG
-          - MW
-          - MY
-          - MV
-          - ML
-          - MT
-          - MH
-          - MQ
-          - MR
-          - MU
-          - YT
-          - MX
-          - FM
-          - MD
-          - MC
-          - MN
-          - ME
-          - MS
-          - MA
-          - MZ
-          - MM
-          - NA
-          - NR
-          - NP
-          - NL
-          - NC
-          - NZ
-          - NI
-          - NE
-          - NG
-          - NU
-          - NF
-          - MK
-          - MP
-          - NO
-          - OM
-          - PK
-          - PW
-          - PS
-          - PA
-          - PG
-          - PY
-          - PE
-          - PH
-          - PN
-          - PL
-          - PT
-          - PR
-          - QA
-          - RE
-          - RO
-          - RU
-          - RW
-          - BL
-          - SH
-          - KN
-          - LC
-          - MF
-          - PM
-          - VC
-          - WS
-          - SM
-          - ST
-          - SA
-          - SN
-          - RS
-          - SC
-          - SL
-          - SG
-          - SX
-          - SK
-          - SI
-          - SB
-          - SO
-          - ZA
-          - GS
-          - SS
-          - ES
-          - LK
-          - SD
-          - SR
-          - SJ
-          - SE
-          - CH
-          - SY
-          - TW
-          - TJ
-          - TZ
-          - TH
-          - TL
-          - TG
-          - TK
-          - TO
-          - TT
-          - TN
-          - TR
-          - TM
-          - TC
-          - TV
-          - UG
-          - UA
-          - AE
-          - GB
-          - US
-          - UM
-          - UY
-          - UZ
-          - VU
-          - VE
-          - VN
-          - VG
-          - VI
-          - WF
-          - EH
-          - YE
-          - ZM
-          - ZW
         default: AU
       timezone:
-        description: "Timezone (e.g., Australia/Sydney)"
+        type: choice
+        description: "Timezone (IANA tzdb)"
+        options:
+          - Africa/Abidjan
+          - Africa/Accra
+          - Africa/Addis_Ababa
+          - Africa/Algiers
+          - Africa/Asmara
+          - Africa/Asmera
+          - Africa/Bamako
+          - Africa/Bangui
+          - Africa/Banjul
+          - Africa/Bissau
+          - Africa/Blantyre
+          - Africa/Brazzaville
+          - Africa/Bujumbura
+          - Africa/Cairo
+          - Africa/Casablanca
+          - Africa/Ceuta
+          - Africa/Conakry
+          - Africa/Dakar
+          - Africa/Dar_es_Salaam
+          - Africa/Djibouti
+          - Africa/Douala
+          - Africa/El_Aaiun
+          - Africa/Freetown
+          - Africa/Gaborone
+          - Africa/Harare
+          - Africa/Johannesburg
+          - Africa/Juba
+          - Africa/Kampala
+          - Africa/Khartoum
+          - Africa/Kigali
+          - Africa/Kinshasa
+          - Africa/Lagos
+          - Africa/Libreville
+          - Africa/Lome
+          - Africa/Luanda
+          - Africa/Lubumbashi
+          - Africa/Lusaka
+          - Africa/Malabo
+          - Africa/Maputo
+          - Africa/Maseru
+          - Africa/Mbabane
+          - Africa/Mogadishu
+          - Africa/Monrovia
+          - Africa/Nairobi
+          - Africa/Ndjamena
+          - Africa/Niamey
+          - Africa/Nouakchott
+          - Africa/Ouagadougou
+          - Africa/Porto-Novo
+          - Africa/Sao_Tome
+          - Africa/Timbuktu
+          - Africa/Tripoli
+          - Africa/Tunis
+          - Africa/Windhoek
+          - America/Adak
+          - America/Anchorage
+          - America/Anguilla
+          - America/Antigua
+          - America/Araguaina
+          - America/Argentina/Buenos_Aires
+          - America/Argentina/Catamarca
+          - America/Argentina/ComodRivadavia
+          - America/Argentina/Cordoba
+          - America/Argentina/Jujuy
+          - America/Argentina/La_Rioja
+          - America/Argentina/Mendoza
+          - America/Argentina/Rio_Gallegos
+          - America/Argentina/Salta
+          - America/Argentina/San_Juan
+          - America/Argentina/San_Luis
+          - America/Argentina/Tucuman
+          - America/Argentina/Ushuaia
+          - America/Aruba
+          - America/Asuncion
+          - America/Atikokan
+          - America/Atka
+          - America/Bahia
+          - America/Bahia_Banderas
+          - America/Barbados
+          - America/Belem
+          - America/Belize
+          - America/Blanc-Sablon
+          - America/Boa_Vista
+          - America/Bogota
+          - America/Boise
+          - America/Buenos_Aires
+          - America/Cambridge_Bay
+          - America/Campo_Grande
+          - America/Cancun
+          - America/Caracas
+          - America/Catamarca
+          - America/Cayenne
+          - America/Cayman
+          - America/Chicago
+          - America/Chihuahua
+          - America/Ciudad_Juarez
+          - America/Coral_Harbour
+          - America/Cordoba
+          - America/Costa_Rica
+          - America/Creston
+          - America/Cuiaba
+          - America/Curacao
+          - America/Danmarkshavn
+          - America/Dawson
+          - America/Dawson_Creek
+          - America/Denver
+          - America/Detroit
+          - America/Dominica
+          - America/Edmonton
+          - America/Eirunepe
+          - America/El_Salvador
+          - America/Ensenada
+          - America/Fort_Nelson
+          - America/Fort_Wayne
+          - America/Fortaleza
+          - America/Glace_Bay
+          - America/Godthab
+          - America/Goose_Bay
+          - America/Grand_Turk
+          - America/Grenada
+          - America/Guadeloupe
+          - America/Guatemala
+          - America/Guayaquil
+          - America/Guyana
+          - America/Halifax
+          - America/Havana
+          - America/Hermosillo
+          - America/Indiana/Indianapolis
+          - America/Indiana/Knox
+          - America/Indiana/Marengo
+          - America/Indiana/Petersburg
+          - America/Indiana/Tell_City
+          - America/Indiana/Vevay
+          - America/Indiana/Vincennes
+          - America/Indiana/Winamac
+          - America/Indianapolis
+          - America/Inuvik
+          - America/Iqaluit
+          - America/Jamaica
+          - America/Jujuy
+          - America/Juneau
+          - America/Kentucky/Louisville
+          - America/Kentucky/Monticello
+          - America/Knox_IN
+          - America/Kralendijk
+          - America/La_Paz
+          - America/Lima
+          - America/Los_Angeles
+          - America/Louisville
+          - America/Lower_Princes
+          - America/Maceio
+          - America/Managua
+          - America/Manaus
+          - America/Marigot
+          - America/Martinique
+          - America/Matamoros
+          - America/Mazatlan
+          - America/Mendoza
+          - America/Menominee
+          - America/Merida
+          - America/Metlakatla
+          - America/Mexico_City
+          - America/Miquelon
+          - America/Moncton
+          - America/Monterrey
+          - America/Montevideo
+          - America/Montreal
+          - America/Montserrat
+          - America/Nassau
+          - America/New_York
+          - America/Nipigon
+          - America/Nome
+          - America/Noronha
+          - America/North_Dakota/Beulah
+          - America/North_Dakota/Center
+          - America/North_Dakota/New_Salem
+          - America/Nuuk
+          - America/Ojinaga
+          - America/Panama
+          - America/Pangnirtung
+          - America/Paramaribo
+          - America/Phoenix
+          - America/Port-au-Prince
+          - America/Port_of_Spain
+          - America/Porto_Acre
+          - America/Porto_Velho
+          - America/Puerto_Rico
+          - America/Punta_Arenas
+          - America/Rainy_River
+          - America/Rankin_Inlet
+          - America/Recife
+          - America/Regina
+          - America/Resolute
+          - America/Rio_Branco
+          - America/Rosario
+          - America/Santa_Isabel
+          - America/Santarem
+          - America/Santiago
+          - America/Santo_Domingo
+          - America/Sao_Paulo
+          - America/Scoresbysund
+          - America/Shiprock
+          - America/Sitka
+          - America/St_Barthelemy
+          - America/St_Johns
+          - America/St_Kitts
+          - America/St_Lucia
+          - America/St_Thomas
+          - America/St_Vincent
+          - America/Swift_Current
+          - America/Tegucigalpa
+          - America/Thule
+          - America/Thunder_Bay
+          - America/Tijuana
+          - America/Toronto
+          - America/Tortola
+          - America/Vancouver
+          - America/Virgin
+          - America/Whitehorse
+          - America/Winnipeg
+          - America/Yakutat
+          - America/Yellowknife
+          - Antarctica/Casey
+          - Antarctica/Davis
+          - Antarctica/DumontDUrville
+          - Antarctica/Macquarie
+          - Antarctica/Mawson
+          - Antarctica/McMurdo
+          - Antarctica/Palmer
+          - Antarctica/Rothera
+          - Antarctica/South_Pole
+          - Antarctica/Syowa
+          - Antarctica/Troll
+          - Antarctica/Vostok
+          - Arctic/Longyearbyen
+          - Asia/Aden
+          - Asia/Almaty
+          - Asia/Amman
+          - Asia/Anadyr
+          - Asia/Aqtau
+          - Asia/Aqtobe
+          - Asia/Ashgabat
+          - Asia/Ashkhabad
+          - Asia/Atyrau
+          - Asia/Baghdad
+          - Asia/Bahrain
+          - Asia/Baku
+          - Asia/Bangkok
+          - Asia/Barnaul
+          - Asia/Beirut
+          - Asia/Bishkek
+          - Asia/Brunei
+          - Asia/Calcutta
+          - Asia/Chita
+          - Asia/Choibalsan
+          - Asia/Chongqing
+          - Asia/Chungking
+          - Asia/Colombo
+          - Asia/Dacca
+          - Asia/Damascus
+          - Asia/Dhaka
+          - Asia/Dili
+          - Asia/Dubai
+          - Asia/Dushanbe
+          - Asia/Famagusta
+          - Asia/Gaza
+          - Asia/Harbin
+          - Asia/Hebron
+          - Asia/Ho_Chi_Minh
+          - Asia/Hong_Kong
+          - Asia/Hovd
+          - Asia/Irkutsk
+          - Asia/Istanbul
+          - Asia/Jakarta
+          - Asia/Jayapura
+          - Asia/Jerusalem
+          - Asia/Kabul
+          - Asia/Kamchatka
+          - Asia/Karachi
+          - Asia/Kashgar
+          - Asia/Kathmandu
+          - Asia/Katmandu
+          - Asia/Khandyga
+          - Asia/Kolkata
+          - Asia/Krasnoyarsk
+          - Asia/Kuala_Lumpur
+          - Asia/Kuching
+          - Asia/Kuwait
+          - Asia/Macao
+          - Asia/Macau
+          - Asia/Magadan
+          - Asia/Makassar
+          - Asia/Manila
+          - Asia/Muscat
+          - Asia/Nicosia
+          - Asia/Novokuznetsk
+          - Asia/Novosibirsk
+          - Asia/Omsk
+          - Asia/Oral
+          - Asia/Phnom_Penh
+          - Asia/Pontianak
+          - Asia/Pyongyang
+          - Asia/Qatar
+          - Asia/Qostanay
+          - Asia/Qyzylorda
+          - Asia/Rangoon
+          - Asia/Riyadh
+          - Asia/Saigon
+          - Asia/Sakhalin
+          - Asia/Samarkand
+          - Asia/Seoul
+          - Asia/Shanghai
+          - Asia/Singapore
+          - Asia/Srednekolymsk
+          - Asia/Taipei
+          - Asia/Tashkent
+          - Asia/Tbilisi
+          - Asia/Tehran
+          - Asia/Tel_Aviv
+          - Asia/Thimbu
+          - Asia/Thimphu
+          - Asia/Tokyo
+          - Asia/Tomsk
+          - Asia/Ujung_Pandang
+          - Asia/Ulaanbaatar
+          - Asia/Ulan_Bator
+          - Asia/Urumqi
+          - Asia/Ust-Nera
+          - Asia/Vientiane
+          - Asia/Vladivostok
+          - Asia/Yakutsk
+          - Asia/Yangon
+          - Asia/Yekaterinburg
+          - Asia/Yerevan
+          - Atlantic/Azores
+          - Atlantic/Bermuda
+          - Atlantic/Canary
+          - Atlantic/Cape_Verde
+          - Atlantic/Faeroe
+          - Atlantic/Faroe
+          - Atlantic/Jan_Mayen
+          - Atlantic/Madeira
+          - Atlantic/Reykjavik
+          - Atlantic/South_Georgia
+          - Atlantic/St_Helena
+          - Atlantic/Stanley
+          - Australia/ACT
+          - Australia/Adelaide
+          - Australia/Brisbane
+          - Australia/Broken_Hill
+          - Australia/Canberra
+          - Australia/Currie
+          - Australia/Darwin
+          - Australia/Eucla
+          - Australia/Hobart
+          - Australia/LHI
+          - Australia/Lindeman
+          - Australia/Lord_Howe
+          - Australia/Melbourne
+          - Australia/NSW
+          - Australia/North
+          - Australia/Perth
+          - Australia/Queensland
+          - Australia/South
+          - Australia/Sydney
+          - Australia/Tasmania
+          - Australia/Victoria
+          - Australia/West
+          - Australia/Yancowinna
+          - Brazil/Acre
+          - Brazil/DeNoronha
+          - Brazil/East
+          - Brazil/West
+          - CET
+          - CST6CDT
+          - Canada/Atlantic
+          - Canada/Central
+          - Canada/Eastern
+          - Canada/Mountain
+          - Canada/Newfoundland
+          - Canada/Pacific
+          - Canada/Saskatchewan
+          - Canada/Yukon
+          - Chile/Continental
+          - Chile/EasterIsland
+          - Cuba
+          - EET
+          - EST
+          - EST5EDT
+          - Egypt
+          - Eire
+          - Europe/Amsterdam
+          - Europe/Andorra
+          - Europe/Astrakhan
+          - Europe/Athens
+          - Europe/Belfast
+          - Europe/Belgrade
+          - Europe/Berlin
+          - Europe/Bratislava
+          - Europe/Brussels
+          - Europe/Bucharest
+          - Europe/Budapest
+          - Europe/Busingen
+          - Europe/Chisinau
+          - Europe/Copenhagen
+          - Europe/Dublin
+          - Europe/Gibraltar
+          - Europe/Guernsey
+          - Europe/Helsinki
+          - Europe/Isle_of_Man
+          - Europe/Istanbul
+          - Europe/Jersey
+          - Europe/Kaliningrad
+          - Europe/Kiev
+          - Europe/Kirov
+          - Europe/Kyiv
+          - Europe/Lisbon
+          - Europe/Ljubljana
+          - Europe/London
+          - Europe/Luxembourg
+          - Europe/Madrid
+          - Europe/Malta
+          - Europe/Mariehamn
+          - Europe/Minsk
+          - Europe/Monaco
+          - Europe/Moscow
+          - Europe/Nicosia
+          - Europe/Oslo
+          - Europe/Paris
+          - Europe/Podgorica
+          - Europe/Prague
+          - Europe/Riga
+          - Europe/Rome
+          - Europe/Samara
+          - Europe/San_Marino
+          - Europe/Sarajevo
+          - Europe/Saratov
+          - Europe/Simferopol
+          - Europe/Skopje
+          - Europe/Sofia
+          - Europe/Stockholm
+          - Europe/Tallinn
+          - Europe/Tirane
+          - Europe/Tiraspol
+          - Europe/Ulyanovsk
+          - Europe/Uzhgorod
+          - Europe/Vaduz
+          - Europe/Vatican
+          - Europe/Vienna
+          - Europe/Vilnius
+          - Europe/Volgograd
+          - Europe/Warsaw
+          - Europe/Zagreb
+          - Europe/Zaporozhye
+          - Europe/Zurich
+          - Factory
+          - GB
+          - GB-Eire
+          - GMT
+          - GMT+0
+          - GMT-0
+          - GMT0
+          - Greenwich
+          - HST
+          - Hongkong
+          - Iceland
+          - Indian/Antananarivo
+          - Indian/Chagos
+          - Indian/Christmas
+          - Indian/Cocos
+          - Indian/Comoro
+          - Indian/Kerguelen
+          - Indian/Mahe
+          - Indian/Maldives
+          - Indian/Mauritius
+          - Indian/Mayotte
+          - Indian/Reunion
+          - Iran
+          - Israel
+          - Jamaica
+          - Japan
+          - Kwajalein
+          - Libya
+          - MET
+          - MST
+          - MST7MDT
+          - Mexico/BajaNorte
+          - Mexico/BajaSur
+          - Mexico/General
+          - NZ
+          - NZ-CHAT
+          - Navajo
+          - PRC
+          - PST8PDT
+          - Pacific/Apia
+          - Pacific/Auckland
+          - Pacific/Bougainville
+          - Pacific/Chatham
+          - Pacific/Chuuk
+          - Pacific/Easter
+          - Pacific/Efate
+          - Pacific/Enderbury
+          - Pacific/Fakaofo
+          - Pacific/Fiji
+          - Pacific/Funafuti
+          - Pacific/Galapagos
+          - Pacific/Gambier
+          - Pacific/Guadalcanal
+          - Pacific/Guam
+          - Pacific/Honolulu
+          - Pacific/Johnston
+          - Pacific/Kanton
+          - Pacific/Kiritimati
+          - Pacific/Kosrae
+          - Pacific/Kwajalein
+          - Pacific/Majuro
+          - Pacific/Marquesas
+          - Pacific/Midway
+          - Pacific/Nauru
+          - Pacific/Niue
+          - Pacific/Norfolk
+          - Pacific/Noumea
+          - Pacific/Pago_Pago
+          - Pacific/Palau
+          - Pacific/Pitcairn
+          - Pacific/Pohnpei
+          - Pacific/Ponape
+          - Pacific/Port_Moresby
+          - Pacific/Rarotonga
+          - Pacific/Saipan
+          - Pacific/Samoa
+          - Pacific/Tahiti
+          - Pacific/Tarawa
+          - Pacific/Tongatapu
+          - Pacific/Truk
+          - Pacific/Wake
+          - Pacific/Wallis
+          - Pacific/Yap
+          - Poland
+          - Portugal
+          - ROC
+          - ROK
+          - Singapore
+          - Turkey
+          - UCT
+          - US/Alaska
+          - US/Aleutian
+          - US/Arizona
+          - US/Central
+          - US/East-Indiana
+          - US/Eastern
+          - US/Hawaii
+          - US/Indiana-Starke
+          - US/Michigan
+          - US/Mountain
+          - US/Pacific
+          - US/Samoa
+          - UTC
+          - Universal
+          - W-SU
+          - WET
+          - Zulu
+          - localtime
         default: Australia/Sydney
       keyboard:
-        type: choice
-        description: "Keyboard layout (XKB)"
-        options:
-          - us
-          - gb
-          - au
-          - de
-          - fr
-          - es
-          - it
-          - jp
-          - ru
-          - br
-          - pt
-          - pl
-          - se
-          - no
-          - dk
-          - fi
-          - tr
-          - cz
-          - sk
-          - hu
-          - ro
-          - gr
-          - nl
-          - be
-          - ch
-          - ca
-          - mx
-          - ua
-          - il
-          - ar
-          - bg
-          - lt
-          - lv
-          - ee
-          - hr
-          - rs
-          - si
-          - mk
-          - ba
-          - is
-          - ie
-          - in
-          - pk
-          - bd
-          - th
-          - vn
-          - kr
-          - cn
-          - tw
-          - hk
-          - za
-          - ir
-          - sy
-          - kz
-          - kg
-          - uz
-          - tn
-          - ma
-          - dz
-          - eg
-          - sa
-          - ae
-          - qa
-          - kw
-          - om
-          - bh
-          - lb
-          - jo
-          - ps
-          - iq
-          - ye
-          - np
-          - lk
-          - ph
-          - my
-          - sg
-          - id
-          - au_mac
-          - us_intl
-          - colemak
-          - dvorak
-          - workman
-          - neo
-          - bepo
-          - custom
+        description: "Keyboard layout (e.g., au)"
         default: au
-      keyboard_custom:
-        description: "If keyboard=custom, set layout here"
-        default: us
       static_ip:
         description: "Static IPv4 (eth0)"
         default: 192.168.1.50
@@ -414,6 +645,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Compute architectures from bit_type + target
+        id: arch
+        run: |
+          BIT="${ github.event.inputs.bit_type }"
+          TGT="${ github.event.inputs.target }"
+          # Defaults
+          ARCH_PI="arm64"
+          ARCH_PC="amd64"
+          ARCH_GENERIC="arm64"
+          if [ "$BIT" = "32bit" ]; then
+            ARCH_PI="armhf"
+            ARCH_PC="i386"
+            # choose i386 for generic when 32bit; adjust to armhf if desired
+            ARCH_GENERIC="i386"
+          fi
+          echo "ARCH_PI=$ARCH_PI" >> $GITHUB_OUTPUT
+          echo "ARCH_PC=$ARCH_PC" >> $GITHUB_OUTPUT
+          echo "ARCH_GENERIC=$ARCH_GENERIC" >> $GITHUB_OUTPUT
+
       - name: Prepare configs from inputs
         env:
           HOSTNAME: ${ github.event.inputs.hostname }
@@ -425,7 +675,6 @@ jobs:
           WIFI_COUNTRY: ${ github.event.inputs.wifi_country }
           TIMEZONE: ${ github.event.inputs.timezone }
           KEYBOARD: ${ github.event.inputs.keyboard }
-          KEYBOARD_CUSTOM: ${ github.event.inputs.keyboard_custom }
           STATIC_IP: ${ github.event.inputs.static_ip }
           GATEWAY: ${ github.event.inputs.gateway }
           DNS: ${ github.event.inputs.dns }
@@ -435,20 +684,31 @@ jobs:
         run: |
           set -e
           mkdir -p targets/live-build/config/includes.chroot/tmp/payload
-          rsync -a shared/ targets/live-build/config/includes.chroot/tmp/payload/
-          rsync -a shared/ targets/pi-gen/stage4/05-chip-base/files/
+          rsync -a shared/ targets/live-build/config/includes.chroot/tmp/payload/ || true
+          rsync -a shared/ targets/pi-gen/stage4/05-chip-base/files/ || true
 
-          # If keyboard=custom, override
-          if [ "${ github.event.inputs.keyboard }" = "custom" ]; then
-            KEYBOARD_VAL="${ github.event.inputs.keyboard_custom }"
-          else
-            KEYBOARD_VAL="${ github.event.inputs.keyboard }"
-          fi
+          # Substitute placeholders (if present in your templates)
+          find . -type f \
+            \( -path './shared/*' -o -path './targets/*' \) -exec sed -i \
+            -e "s/__HOSTNAME__/${ github.event.inputs.hostname }/g" \
+            -e "s/__USERNAME__/${ github.event.inputs.username }/g" \
+            -e "s/__USERPASS__/${ github.event.inputs.user_password }/g" \
+            -e "s/__ROOTPASS__/${ github.event.inputs.root_password }/g" \
+            -e "s/__WIFI_SSID__/${ github.event.inputs.wifi_ssid }/g" \
+            -e "s/__WIFI_PASSWORD__/${ github.event.inputs.wifi_password }/g" \
+            -e "s/__WIFI_COUNTRY__/${ github.event.inputs.wifi_country }/g" \
+            -e "s#__TIMEZONE__#${ github.event.inputs.timezone }#g" \
+            -e "s/__KEYBOARD__/${ github.event.inputs.keyboard }/g" \
+            -e "s/__STATIC_IP__/${ github.event.inputs.static_ip }/g" \
+            -e "s/__GATEWAY__/${ github.event.inputs.gateway }/g" \
+            -e "s/__DNS__/${ github.event.inputs.dns }/g" \
+            -e "s/__PERMIT_ROOT_LOGIN__/${ github.event.inputs.permit_root_login }/g" \
+            -e "s/__PASSWORD_AUTH__/${ github.event.inputs.password_auth }/g" \
+            -e "s/__PUBKEY_AUTH__/${ github.event.inputs.pubkey_auth }/g" \
+            -e "s/__USERNAME__COLON__/${ github.event.inputs.username }:/g" \
+            {} +
 
-          # Substitute placeholders in templates
-          find . -type f \( -path './shared/*' -o -path './targets/*' \) -exec sed -i             -e "s/__HOSTNAME__/${ github.event.inputs.hostname }/g"             -e "s/__USERNAME__/${ github.event.inputs.username }/g"             -e "s/__USERPASS__/${ github.event.inputs.user_password }/g"             -e "s/__ROOTPASS__/${ github.event.inputs.root_password }/g"             -e "s/__WIFI_SSID__/${ github.event.inputs.wifi_ssid }/g"             -e "s/__WIFI_PASSWORD__/${ github.event.inputs.wifi_password }/g"             -e "s/__WIFI_COUNTRY__/${ github.event.inputs.wifi_country }/g"             -e "s#__TIMEZONE__#${ github.event.inputs.timezone }#g"             -e "s/__KEYBOARD__/${ github.event.inputs.keyboard }/g"             -e "s/__KEYBOARD_VAL__/${ github.event.inputs.keyboard_custom }/g"             -e "s/__STATIC_IP__/${ github.event.inputs.static_ip }/g"             -e "s/__GATEWAY__/${ github.event.inputs.gateway }/g"             -e "s/__DNS__/${ github.event.inputs.dns }/g"             -e "s/__PERMIT_ROOT_LOGIN__/${ github.event.inputs.permit_root_login }/g"             -e "s/__PASSWORD_AUTH__/${ github.event.inputs.password_auth }/g"             -e "s/__PUBKEY_AUTH__/${ github.event.inputs.pubkey_auth }/g"             -e "s/__USERNAME__COLON__/${ github.event.inputs.username }:/g"             {} +
-
-      - name: Build Raspberry Pi (pi)
+      - name: Build Raspberry Pi (pi-gen)
         if: ${ github.event.inputs.target == 'pi' }
         uses: usimd/pi-gen-action@v1
         with:
@@ -459,12 +719,14 @@ jobs:
           deploy_compression: xz
           deploy_compression_level: 9
           deploy_zip: true
+          # NOTE: The action defaults to arm64. If it supports arch input, pass it here:
+          # architecture: ${ steps.arch.outputs.ARCH_PI }
 
       - name: Upload Pi artifact
         if: ${ github.event.inputs.target == 'pi' }
         uses: actions/upload-artifact@v4
         with:
-          name: Local-github-pi-arm64
+          name: Local-github-pi-${ steps.arch.outputs.ARCH_PI }
           path: deploy/*
 
       - name: Build PC ISO (live-build)
@@ -473,18 +735,24 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y live-build debootstrap syslinux isolinux
           cd targets/live-build
-          lb config --architecture amd64 --distribution bookworm --mode debian             --binary-images iso-hybrid --debian-installer live --apt-recommends false
+          lb config --architecture ${ steps.arch.outputs.ARCH_PC } --distribution bookworm --mode debian             --binary-images iso-hybrid --debian-installer live --apt-recommends false
           sudo lb build
 
       - name: Upload PC artifact
         if: ${ github.event.inputs.target == 'pc' }
         uses: actions/upload-artifact@v4
         with:
-          name: Local-github-pc-amd64
-          path: targets/live-build/live-image-amd64.hybrid.iso
+          name: Local-github-pc-${ steps.arch.outputs.ARCH_PC }
+          path: targets/live-build/live-image-*.iso
 
-      - name: Generic/i860 placeholders
-        if: ${ github.event.inputs.target != 'pi' && github.event.inputs.target != 'pc' }
+      - name: Build generic image (arm64/armhf/riscv64/i386)
+        if: ${ contains('arm64,armhf,riscv64,i386', github.event.inputs.target) }
         run: |
-          echo "Generic or i860 builds are placeholders in this package."
+          echo "Generic placeholders; map ${ github.event.inputs.target } and bit_type as needed."
+          exit 0
+
+      - name: i860 placeholder
+        if: ${ github.event.inputs.target == 'i860' }
+        run: |
+          echo "i860 placeholder build."
           exit 0

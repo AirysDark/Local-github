@@ -1,7 +1,10 @@
-# Local-github — full dropdowns for Wi‑Fi country + Keyboard
+# Local-github — dropdown Timezones + 32/64-bit
 
-This package updates the workflow so **Wi‑Fi country code** is a full ISO list dropdown, and **Keyboard layout** is a large dropdown (with a `custom` fallback).
+This package updates the workflow to include:
+- **Timezone**: full IANA timezone dropdown (e.g., `Australia/Sydney`).
+- **Bit type**: dropdown `64bit` or `32bit` that maps architectures per target:
+  - **Pi**: 64bit → arm64, 32bit → armhf (the action defaults to arm64; armhf may require action support).
+  - **PC**: 64bit → amd64, 32bit → i386.
+  - **Generic**: 64bit → arm64, 32bit → i386 (adjust as you like).
 
-- Edit values in the **Actions → workflow_dispatch** form.
-- If you select `keyboard=custom`, set `keyboard_custom` to any valid XKB layout string (e.g. `us`, `gb`, `au`, `us,intl`, etc.).
-- Targets `pi` and `pc` are wired; generics/i860 are placeholders here.
+> Note: For Raspberry Pi via `usimd/pi-gen-action`, 32-bit (`armhf`) support depends on the action. The workflow passes an `ARCH_PI` env you can use or switch to a custom pi-gen invocation if needed.
