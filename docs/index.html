@@ -308,7 +308,7 @@ async function loadOptions(){
   const zones=js.timezones||js.tz||["Australia/Sydney","UTC","Europe/London","America/New_York"];
   const kbs=js.keyboards||js.kbd||["au","us","gb","us(intl)","custom"];
 
-  fillSelect('build_type', buildTypes, '(build type)'); 
+  fillSelect('build_type', buildTypes, '(build type)');
   fillSelect('cpu_bitrate', cpuBits, '(bitrate)');
   fillSelect('wifi_country', countries, '(Wi-Fi country)');
   fillSelect('timezone', zones, '(Timezone)');
@@ -340,6 +340,7 @@ async function dispatchWorkflow(){
   const owner=getOwner(), repo=getRepo(), token=getToken(), ref=getRef(), path=getWorkflowPath();
   if(!owner||!repo||!token) throw new Error('Missing Owner, Repo or Token');
   const config=gatherInputs();
+  // send a single "config" string to avoid 10-input limit
   const body={ref, inputs:{config: JSON.stringify(config)}};
   const wfPathEncoded=encodeURIComponent(path);
   await gh('POST', `/repos/${owner}/${repo}/actions/workflows/${wfPathEncoded}/dispatches`, token, body);
