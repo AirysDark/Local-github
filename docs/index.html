@@ -24,11 +24,10 @@
 
   <div class="row">
     <div class="card">
-      <h2>Repository</h2>
       <label>Owner</label>
-      <input id="owner" placeholder="owner (required)">
+      <input id="owner" placeholder="e.g. AirysDark">
       <label>Repo</label>
-      <input id="repo" placeholder="repo (required)">
+      <input id="repo" placeholder="e.g. Local-github">
       <label>Workflow file path</label>
       <input id="workflow" value=".github/workflows/build.yml">
       <label>Ref/branch</label>
@@ -37,10 +36,9 @@
     </div>
 
     <div class="card">
-      <h2>Build Target</h2>
       <div class="two">
         <div>
-          <label>Build type <small>(e.g. pi)</small></label>
+          <label>Build type</label>
           <select id="build_type">
             <option value="pi" selected>pi</option>
             <option value="pc">pc (reserved)</option>
@@ -54,68 +52,73 @@
           </select>
         </div>
       </div>
-      <label>target_bits (auto)</label>
-      <input id="target_bits" value="pi 64bit" readonly>
-      <small>Workflow currently builds Raspberry Pi images. PC reserved for future.</small>
+      <label>target_bits</label>
+      <input id="target_bits" value="auto" readonly>
+      <small>Sent as a computed value from Build type + CPU bitrate; this field intentionally shows "auto".</small>
     </div>
   </div>
 
   <div class="row" style="margin-top:16px">
     <div class="card">
-      <h2>User</h2>
-      <label>user_name <small>(Console username or preset token like <code>@users:1</code>)</small></label>
-      <input id="user_name" value="@users:1">
-      <label>user_password <small>(ignored if preset token includes password)</small></label>
-      <input id="user_password" type="password" value="">
+      <label>Console username</label>
+      <input id="user_name" placeholder="e.g. AirysDark">
+      <label>Console password</label>
+      <input id="user_password" type="password" placeholder="e.g. Zombie1986X2">
 
-      <h2 style="margin-top:14px">Wi‑Fi</h2>
-      <label>wifi_ssid <small>(SSID or preset token like <code>@wifi:1</code>)</small></label>
-      <input id="wifi_ssid" value="@wifi:1">
-      <label>wifi_password <small>(ignored if preset token includes password)</small></label>
-      <input id="wifi_password" type="password" value="">
+      <label style="margin-top:14px;">Wi‑Fi SSID</label>
+      <input id="wifi_ssid" placeholder="e.g. Raspbain">
+      <label>Wi‑Fi password</label>
+      <input id="wifi_password" type="password" placeholder="e.g. YourWiFiPassword">
     </div>
 
     <div class="card">
-      <h2>SSH</h2>
-      <label>ssh_permit_root_login <small><code>yes</code>=allow root; <code>prohibit-password</code>=keys only; <code>no</code>=disable</small></label>
-      <input id="ssh_prl" value="@ssh:0">
-      <label>ssh_password_auth <small>(<code>yes</code> or <code>no</code>; ignored if using @ssh)</small></label>
-      <input id="ssh_pa" value="">
-      <label>ssh_pubkey_auth <small>(<code>yes</code> or <code>no</code>; ignored if using @ssh)</small></label>
-      <input id="ssh_pk" value="">
+      <label>SSH preset</label>
+      <select id="ssh_preset"></select>
+      <small>PermitRootLogin: <code>yes</code>=allow root; <code>prohibit-password</code>=keys only; <code>no</code>=disable</small>
+      <label>PermitRootLogin (override)</label>
+      <input id="ssh_prl" placeholder="e.g. yes">
+      <label>PasswordAuthentication (override)</label>
+      <input id="ssh_pa" placeholder="e.g. yes">
+      <label>PubkeyAuthentication (override)</label>
+      <input id="ssh_pk" placeholder="e.g. yes">
     </div>
   </div>
 
   <div class="row" style="margin-top:16px">
     <div class="card">
-      <h2>Networking (Static IPv4)</h2>
-      <label>static_ip <small>(IPv4 or preset <code>@net:n</code>)</small></label>
-      <input id="static_ip" value="@net:0">
-      <label>gateway <small>(router IPv4)</small></label>
-      <input id="gateway" value="">
-      <label>dns <small>(semicolon-separated, e.g. <code>1.1.1.1;8.8.8.8</code>)</small></label>
-      <input id="dns" value="">
+      <label>Preset static IPv4</label>
+      <select id="net_preset"></select>
+      <div class="two">
+        <div>
+          <label>Static IPv4</label>
+          <input id="static_ip" placeholder="e.g. 192.168.0.8">
+        </div>
+        <div>
+          <label>Gateway IPv4</label>
+          <input id="gateway" placeholder="e.g. 192.168.0.1">
+        </div>
+      </div>
+      <label>DNS servers</label>
+      <input id="dns" placeholder="e.g. 1.1.1.1;8.8.8.8">
     </div>
 
     <div class="card">
-      <h2>Region & Locale</h2>
-      <label>wifi_country <small>(ISO-3166 code or preset <code>@country:n</code>)</small></label>
-      <input id="wifi_country" value="@country:0">
-      <label>timezone <small>(IANA tz or preset <code>@tz:n</code>)</small></label>
-      <input id="timezone" value="@tz:0">
-      <label>keyboard <small>(XKB layout or preset <code>@kbd:n</code> or <code>custom</code>)</small></label>
-      <input id="keyboard" value="@kbd:0">
-      <label>keyboard_custom <small>(when layout is <code>custom</code>, e.g. <code>us,intl</code>)</small></label>
-      <input id="keyboard_custom" value="">
+      <label>Wi‑Fi country</label>
+      <select id="wifi_country"></select>
+      <label>Timezone</label>
+      <select id="timezone"></select>
+      <label>Keyboard layout</label>
+      <select id="keyboard"></select>
+      <label>Custom layout (only if using "custom")</label>
+      <input id="keyboard_custom" placeholder="e.g. us,intl">
     </div>
   </div>
 
   <div class="card" style="margin-top:16px">
     <button id="buildBtn">Show build payload</button>
     <div style="margin-top:8px;">
-      <label>Personal Access Token (optional — used only in the curl you run locally)</label>
-      <input id="token" type="password" placeholder="ghp_xxx (NOT sent anywhere by this page)">
-      <small>Security: the token is never transmitted by this page. It’s only inserted into a copyable <code>curl</code> command below.</small>
+      <label>Personal Access Token (optional — inserted into the curl below only)</label>
+      <input id="token" type="password" placeholder="ghp_xxx (NOT sent by this page)">
     </div>
 
     <h3 style="margin-top:16px">workflow_dispatch JSON</h3>
@@ -131,29 +134,26 @@
 </div>
 
 <script>
-function targetBits() {
+function targetBitsComputed() {
   return document.getElementById('build_type').value + ' ' + document.getElementById('cpu_bitrate').value;
 }
-function payload() {
+function gatherInputs() {
   return {
-    ref: document.getElementById('ref').value || 'main',
-    inputs: {
-      target_bits: targetBits(),
-      user_name: document.getElementById('user_name').value,
-      user_password: document.getElementById('user_password').value,
-      wifi_ssid: document.getElementById('wifi_ssid').value,
-      wifi_password: document.getElementById('wifi_password').value,
-      ssh_permit_root_login: document.getElementById('ssh_prl').value,
-      ssh_password_auth: document.getElementById('ssh_pa').value,
-      ssh_pubkey_auth: document.getElementById('ssh_pk').value,
-      static_ip: document.getElementById('static_ip').value,
-      gateway: document.getElementById('gateway').value,
-      dns: document.getElementById('dns').value,
-      wifi_country: document.getElementById('wifi_country').value,
-      timezone: document.getElementById('timezone').value,
-      keyboard: document.getElementById('keyboard').value,
-      keyboard_custom: document.getElementById('keyboard_custom').value
-    }
+    target_bits: targetBitsComputed(),
+    user_name: document.getElementById('user_name').value,
+    user_password: document.getElementById('user_password').value,
+    wifi_ssid: document.getElementById('wifi_ssid').value,
+    wifi_password: document.getElementById('wifi_password').value,
+    ssh_permit_root_login: document.getElementById('ssh_prl').value || (document.getElementById('ssh_preset').selectedOptions[0]?.dataset.prl || ""),
+    ssh_password_auth: document.getElementById('ssh_pa').value || (document.getElementById('ssh_preset').selectedOptions[0]?.dataset.pa || ""),
+    ssh_pubkey_auth: document.getElementById('ssh_pk').value || (document.getElementById('ssh_preset').selectedOptions[0]?.dataset.pk || ""),
+    static_ip: document.getElementById('static_ip').value,
+    gateway: document.getElementById('gateway').value,
+    dns: document.getElementById('dns').value,
+    wifi_country: document.getElementById('wifi_country').value,
+    timezone: document.getElementById('timezone').value,
+    keyboard: document.getElementById('keyboard').value,
+    keyboard_custom: document.getElementById('keyboard_custom').value
   };
 }
 function showPayload() {
@@ -170,29 +170,88 @@ function showPayload() {
     return;
   }
 
-  const body = payload();
+  const body = { ref, inputs: gatherInputs() };
   const url = `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${encodeURIComponent(wf)}/dispatches`;
 
   document.getElementById('jsonOut').textContent = JSON.stringify(body, null, 2);
   document.getElementById('repoOut').textContent = JSON.stringify({ url, owner, repo, workflow: wf, ref }, null, 2);
 
-  const authLine = token ? f`-H "Authorization: Bearer ${token}"` : '# supply -H "Authorization: Bearer <TOKEN>"';
+  const authHeader = token ? `  -H "Authorization: Bearer ${token}" \` : '  # -H "Authorization: Bearer <TOKEN>" \\';
   const curl = [
-    'curl -s -X POST \',
-    '  -H "Accept: application/vnd.github+json" \',
-    '  -H "X-GitHub-Api-Version: 2022-11-28" \',
-    (token ? f'  -H "Authorization: Bearer {token}" \' : '  # -H "Authorization: Bearer <TOKEN>" \'),
-    f'  https://api.github.com/repos/{owner}/{repo}/actions/workflows/{encodeURIComponent(wf)}/dispatches \',
+    'curl -s -X POST \\',
+    '  -H "Accept: application/vnd.github+json" \\',
+    '  -H "X-GitHub-Api-Version: 2022-11-28" \\',
+    authHeader,
+    `  https://api.github.com/repos/${owner}/${repo}/actions/workflows/${encodeURIComponent(wf)}/dispatches \\`,
     "  -d '" + JSON.stringify(body).replace(/'/g, "'"'"'") + "'"
   ].join("\n");
   document.getElementById('curlOut').textContent = curl;
 }
+
+function fillSelectFromArray(sel, arr, placeholder) {
+  sel.innerHTML = "";
+  const opt0 = document.createElement('option');
+  opt0.value = "";
+  opt0.textContent = placeholder || "(select)";
+  sel.appendChild(opt0);
+  arr.forEach(v => {
+    const o = document.createElement('option');
+    o.value = v;
+    o.textContent = v;
+    sel.appendChild(o);
+  });
+}
+
+function fillSshPresets(sel, list) {
+  sel.innerHTML = "";
+  const opt0 = document.createElement('option');
+  opt0.value = "";
+  opt0.textContent = "(no preset)";
+  sel.appendChild(opt0);
+  list.forEach(s => {
+    const o = document.createElement('option');
+    o.value = s.label || `${s.permit_root_login}:${s.password_auth}:${s.pubkey_auth}`;
+    o.textContent = s.label || `${s.permit_root_login}:${s.password_auth}:${s.pubkey_auth}`;
+    o.dataset.prl = s.permit_root_login;
+    o.dataset.pa = s.password_auth;
+    o.dataset.pk = s.pubkey_auth;
+    sel.appendChild(o);
+  });
+}
+
+async function loadOptions() {
+  // Try to fetch options.json from same directory or parent
+  const urls = ['options.json', '../config/options.json', '/config/options.json'];
+  let js = null;
+  for (const u of urls) {
+    try {
+      const r = await fetch(u, {cache:'no-store'});
+      if (r.ok) { js = await r.json(); break; }
+    } catch (e) {}
+  }
+  if (!js) {
+    // Fallback minimal choices
+    fillSshPresets(document.getElementById('ssh_preset'), [
+      {permit_root_login:'yes', password_auth:'yes', pubkey_auth:'yes', label:'true:true:true'}
+    ]);
+    fillSelectFromArray(document.getElementById('wifi_country'), ['AU','US','GB'], '(Wi‑Fi country)');
+    fillSelectFromArray(document.getElementById('timezone'), ['Australia/Sydney','UTC'], '(Timezone)');
+    fillSelectFromArray(document.getElementById('keyboard'), ['us','au','gb','custom'], '(Keyboard)');
+    return;
+  }
+  fillSshPresets(document.getElementById('ssh_preset'), js.ssh || []);
+  fillSelectFromArray(document.getElementById('wifi_country'), js.wifi_countries || [], '(Wi‑Fi country)');
+  fillSelectFromArray(document.getElementById('timezone'), js.timezones || [], '(Timezone)');
+  fillSelectFromArray(document.getElementById('keyboard'), js.keyboards || [], '(Keyboard)');
+}
+
 document.getElementById('buildBtn').addEventListener('click', function(e){
   e.preventDefault();
-  // refresh target_bits display
-  document.getElementById('target_bits').value = targetBits();
+  document.getElementById('target_bits').value = 'auto'; // keep visible as "auto"
   showPayload();
 });
+
+loadOptions();
 </script>
 </body>
 </html>
