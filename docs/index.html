@@ -1,618 +1,198 @@
-<!doctype html>
-<html lang="en" class="h-full">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Local-github Builder</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- Tailwind -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    // Tailwind config for dark mode and fonts
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui'] }
-        }
-      }
-    }
-  </script>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <meta charset="UTF-8">
+  <title>⚙️ Local-Github OS Builder</title>
   <style>
-    :root {
-      --glass-bg: rgba(255,255,255,0.75);
-      --glass-border: rgba(255,255,255,0.45);
-      --glass-shadow: rgba(2,6,23,0.08);
-    }
-    .dark:root {
-      --glass-bg: rgba(15,23,42,0.55);
-      --glass-border: rgba(148,163,184,0.25);
-      --glass-shadow: rgba(0,0,0,0.35);
-    }
-    .card {
-      background: var(--glass-bg);
-      backdrop-filter: blur(12px);
-      border: 1px solid var(--glass-border);
-      box-shadow: 0 10px 30px var(--glass-shadow);
-      border-radius: 16px;
+    body {
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      background-color: #0d1117;
+      color: #e6edf3;
+      margin: 0;
       padding: 20px;
     }
-    .bg-animated {
-      position: fixed;
-      inset: -20%;
-      z-index: -1;
-      background:
-        radial-gradient(1200px 1200px at 10% 10%, rgba(99,102,241,.25), transparent 60%),
-        radial-gradient(900px 900px at 90% 20%, rgba(244,63,94,.18), transparent 55%),
-        radial-gradient(1000px 1000px at 50% 80%, rgba(34,197,94,.18), transparent 60%),
-        linear-gradient(180deg, #f8fafc, #eef2ff);
-      animation: floaty 18s ease-in-out infinite alternate;
+    h1, h2 {
+      color: #58a6ff;
     }
-    .dark .bg-animated {
-      background:
-        radial-gradient(1200px 1200px at 10% 10%, rgba(99,102,241,.25), transparent 60%),
-        radial-gradient(900px 900px at 90% 20%, rgba(244,63,94,.18), transparent 55%),
-        radial-gradient(1000px 1000px at 50% 80%, rgba(34,197,94,.18), transparent 60%),
-        linear-gradient(180deg, #0b1220, #0f172a);
+    .section {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 20px;
     }
-    @keyframes floaty {
-      from { transform: translateY(-10px) scale(1.02); }
-      to   { transform: translateY(10px) scale(1.00); }
+    label {
+      display: block;
+      margin: 10px 0 5px;
+      font-weight: bold;
     }
-    .label { @apply block text-sm font-medium mb-1; }
-    .input, select, textarea {
-      @apply w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white/80 dark:bg-slate-900/60 px-3 py-2
-             focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400;
+    select, input {
+      width: 100%;
+      padding: 8px;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      color: #e6edf3;
     }
-    .btn        { @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 font-medium
-                        bg-indigo-600 text-white hover:bg-indigo-700 active:scale-[0.99] transition; }
-    .btn-ghost  { @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 font-medium
-                        border border-slate-300 dark:border-slate-600 bg-white/50 dark:bg-slate-900/40
-                        hover:bg-white/80 dark:hover:bg-slate-900/60; }
-    .hint { @apply text-xs text-slate-500 dark:text-slate-400 mt-1; }
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace; }
-    .pill { @apply text-xs font-semibold bg-slate-100 text-slate-700 dark:bg-slate-800/80 dark:text-slate-200 px-2 py-1 rounded; }
-    .section-title { @apply text-lg font-semibold; }
-    .grid2 { @apply grid grid-cols-1 md:grid-cols-2 gap-4; }
-    .grid3 { @apply grid grid-cols-1 md:grid-cols-3 gap-4; }
-    .toast {
-      @apply fixed right-4 bottom-4 z-50 rounded-xl px-4 py-3 text-sm font-medium shadow-lg;
-      background: var(--glass-bg); border: 1px solid var(--glass-border);
+    button {
+      background: #238636;
+      color: white;
+      padding: 12px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 20px;
     }
-    .invalid { @apply border-red-500 focus:ring-red-500; }
+    button:hover {
+      background: #2ea043;
+    }
   </style>
 </head>
-<body class="min-h-full text-slate-900 dark:text-slate-100">
-  <div class="bg-animated"></div>
+<body>
+  <h1>⚙️ Local-Github OS Builder</h1>
 
-  <!-- Top bar -->
-  <div class="max-w-6xl mx-auto px-4 md:px-8 pt-8">
-    <div class="flex items-center justify-between mb-6">
-      <div class="flex items-center gap-3">
-        <div class="h-10 w-10 rounded-xl bg-indigo-600 text-white grid place-items-center font-bold">LG</div>
-        <div>
-          <h1 class="text-2xl md:text-3xl font-bold">Local-github Builder</h1>
-          <p class="text-sm text-slate-600 dark:text-slate-400">Sleek builder UI with presets from <span class="pill">/config/*.json</span></p>
-        </div>
-      </div>
-      <div class="flex items-center gap-2">
-        <button id="themeToggle" class="btn-ghost" title="Toggle theme">🌙/☀️</button>
-        <a class="btn-ghost" href="#" id="reloadPresets">Reload presets</a>
-      </div>
-    </div>
-
-    <!-- Status -->
-    <div class="card mb-6">
-      <div class="flex items-center gap-3">
-        <div id="statusDot" class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></div>
-        <div id="statusText" class="text-sm">Loading presets…</div>
-      </div>
-    </div>
-
-    <div class="grid md:grid-cols-3 gap-6">
-      <!-- Left column -->
-      <div class="md:col-span-2 flex flex-col gap-6">
-        <!-- Build -->
-        <div class="card">
-          <div class="flex items-center justify-between mb-3">
-            <div class="section-title">Build Target</div>
-            <span class="pill">Step 1</span>
-          </div>
-          <div class="grid2">
-            <div>
-              <label class="label" for="build_type">Build type</label>
-              <select id="build_type"></select>
-              <div class="hint">Platform: Pi, Jetson, x86, Android, etc.</div>
-            </div>
-            <div>
-              <label class="label" for="cpu_bitrate">CPU bit-rate</label>
-              <select id="cpu_bitrate"></select>
-              <div class="hint">32bit / 64bit. We also compute <span class="pill mono">target_bits</span> like <span class="mono">"pi 64bit"</span>.</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- User & Wi-Fi -->
-        <div class="card">
-          <div class="flex items-center justify-between mb-3">
-            <div class="section-title">Console User & Wi-Fi</div>
-            <span class="pill">Step 2</span>
-          </div>
-          <div class="grid2">
-            <div>
-              <label class="label" for="user_name">Console username</label>
-              <input id="user_name" class="input" placeholder="e.g. AirysDark" />
-            </div>
-            <div>
-              <label class="label" for="user_password">Console password</label>
-              <input id="user_password" type="password" class="input" placeholder="••••••••" />
-            </div>
-            <div>
-              <label class="label" for="wifi_ssid">Wi-Fi SSID</label>
-              <input id="wifi_ssid" class="input" placeholder="e.g. Raspbain" />
-            </div>
-            <div>
-              <label class="label" for="wifi_password">Wi-Fi password</label>
-              <input id="wifi_password" type="password" class="input" placeholder="••••••••" />
-            </div>
-          </div>
-        </div>
-
-        <!-- SSH -->
-        <div class="card">
-          <div class="flex items-center justify-between mb-3">
-            <div class="section-title">SSH (sshd_config)</div>
-            <span class="pill">Step 3</span>
-          </div>
-          <div class="grid3">
-            <div>
-              <label class="label" for="ssh_permit_root_login">PermitRootLogin</label>
-              <select id="ssh_permit_root_login">
-                <option value="yes">yes</option>
-                <option value="prohibit-password">prohibit-password</option>
-                <option value="no">no</option>
-              </select>
-              <p class="hint">Enable root SSH (<b>yes</b>), keys only (<b>prohibit-password</b>), or disable (<b>no</b>).</p>
-            </div>
-            <div>
-              <label class="label" for="ssh_password_auth">PasswordAuthentication</label>
-              <select id="ssh_password_auth">
-                <option value="yes">yes</option>
-                <option value="no">no</option>
-              </select>
-              <p class="hint">Allow SSH password logins.</p>
-            </div>
-            <div>
-              <label class="label" for="ssh_pubkey_auth">PubkeyAuthentication</label>
-              <select id="ssh_pubkey_auth">
-                <option value="yes">yes</option>
-                <option value="no">no</option>
-              </select>
-              <p class="hint">Allow SSH public key auth.</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Networking -->
-        <div class="card">
-          <div class="flex items-center justify-between mb-3">
-            <div class="section-title">Static IPv4</div>
-            <span class="pill">Step 4</span>
-          </div>
-          <div class="grid3">
-            <div>
-              <label class="label" for="static_ip">Device IPv4</label>
-              <input id="static_ip" class="input" placeholder="e.g. 192.168.0.8" />
-            </div>
-            <div>
-              <label class="label" for="gateway">Gateway IPv4</label>
-              <input id="gateway" class="input" placeholder="e.g. 192.168.0.1" />
-            </div>
-            <div>
-              <label class="label" for="dns">DNS servers</label>
-              <input id="dns" class="input" placeholder="e.g. 1.1.1.1;8.8.8.8" />
-              <div class="hint">Semicolon separated.</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Region & Locale -->
-        <div class="card">
-          <div class="flex items-center justify-between mb-3">
-            <div class="section-title">Region &amp; Locale</div>
-            <span class="pill">Step 5</span>
-          </div>
-          <div class="grid3">
-            <div>
-              <label class="label" for="wifi_country">Wi-Fi country</label>
-              <select id="wifi_country"></select>
-            </div>
-            <div>
-              <label class="label" for="timezone">Timezone</label>
-              <select id="timezone"></select>
-            </div>
-            <div>
-              <label class="label" for="keyboard">Keyboard layout</label>
-              <select id="keyboard"></select>
-              <div class="hint">Select <b>custom</b> to type a variant.</div>
-            </div>
-            <div class="md:col-span-3" id="kbdCustomWrap" class="hidden">
-              <label class="label" for="keyboard_custom">Custom keyboard layout</label>
-              <input id="keyboard_custom" class="input" placeholder="e.g. us,intl" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Right column: Actions -->
-      <div class="flex flex-col gap-6">
-        <div class="card">
-          <div class="flex items-center justify-between mb-3">
-            <div class="section-title">Build &amp; Export</div>
-            <span class="pill">Step 6</span>
-          </div>
-          <div class="flex flex-wrap gap-3">
-            <button id="btnPreview" class="btn">Preview payload</button>
-            <button id="btnDownload" class="btn-ghost">Download <span class="mono">inputs.json</span></button>
-          </div>
-          <pre id="preview" class="mono text-xs bg-slate-900/90 text-slate-100 rounded-xl p-4 overflow-x-auto mt-4 max-h-72"></pre>
-        </div>
-
-        <div class="card">
-          <div class="flex items-center justify-between mb-3">
-            <div class="section-title">Trigger Workflow (optional)</div>
-            <span class="pill">GitHub</span>
-          </div>
-          <div class="grid2">
-            <div>
-              <label class="label" for="owner">Owner</label>
-              <input id="owner" class="input" placeholder="e.g. AirysDark" />
-            </div>
-            <div>
-              <label class="label" for="repo">Repo</label>
-              <input id="repo" class="input" placeholder="e.g. Local-github" />
-            </div>
-            <div>
-              <label class="label" for="workflowPath">Workflow path</label>
-              <input id="workflowPath" class="input" value=".github/workflows/build.yml" />
-            </div>
-            <div>
-              <label class="label" for="ref">Ref / branch</label>
-              <input id="ref" class="input" value="main" />
-            </div>
-            <div class="md:col-span-2">
-              <label class="label" for="token">GitHub token (repo scope)</label>
-              <input id="token" type="password" class="input" placeholder="ghp_xxx or fine-grained token" />
-              <div class="hint">Browser calls GitHub API directly; token stays client-side.</div>
-            </div>
-          </div>
-          <div class="mt-4 flex flex-wrap gap-3">
-            <button id="btnDispatchMany" class="btn">Dispatch (many inputs)</button>
-            <button id="btnDispatchBlob" class="btn-ghost">Dispatch (compact <span class="mono">config_blob</span>)</button>
-          </div>
-          <p class="hint mt-3">If your workflow has &gt;10 inputs, use <b>compact</b> and accept <span class="mono">config_blob</span> in your YAML.</p>
-        </div>
-      </div>
-    </div>
-
-    <footer class="text-center text-xs text-slate-500 dark:text-slate-400 my-10">
-      Built with ❤️ for Pi imaging via GitHub Actions.
-    </footer>
+  <!-- Build Target -->
+  <div class="section">
+    <h2>🖥️ Build Target</h2>
+    <label for="target_bits">Device & Bitrate</label>
+    <select id="target_bits">
+      <option value="pi 64bit">🍓 Pi 64bit</option>
+      <option value="pi 32bit">🍓 Pi 32bit</option>
+      <option value="pc 64bit">💻 PC 64bit</option>
+      <option value="pc 32bit">💻 PC 32bit</option>
+      <option value="android">🤖 Android</option>
+      <option value="i860">⚡ Intel i860</option>
+      <option value="arm64">🛡️ ARM64</option>
+      <option value="armhf">⚙️ ARMhf</option>
+      <option value="riscv64">🚀 RISC-V 64</option>
+      <option value="i386">💾 i386</option>
+    </select>
   </div>
 
-  <div id="toast" class="toast hidden"></div>
+  <!-- User -->
+  <div class="section">
+    <h2>👤 User</h2>
+    <label for="user_name">Username</label>
+    <input type="text" id="user_name" placeholder="e.g. AirysDark">
+    <label for="user_password">Password</label>
+    <input type="password" id="user_password" placeholder="••••••••">
+  </div>
+
+  <!-- Wi-Fi -->
+  <div class="section">
+    <h2>📶 Wi-Fi</h2>
+    <label for="wifi_ssid">SSID</label>
+    <input type="text" id="wifi_ssid" placeholder="e.g. Raspbain">
+    <label for="wifi_password">Password</label>
+    <input type="password" id="wifi_password" placeholder="••••••••">
+    <label for="static_ip">Static IPv4</label>
+    <input type="text" id="static_ip" placeholder="192.168.0.130">
+    <label for="gateway">Gateway</label>
+    <input type="text" id="gateway" placeholder="192.168.0.1">
+    <label for="dns">DNS Servers (semicolon-separated)</label>
+    <input type="text" id="dns" placeholder="1.1.1.1;8.8.8.8">
+  </div>
+
+  <!-- SSH -->
+  <div class="section">
+    <h2>🔐 SSH</h2>
+    <label for="ssh_permit_root_login">PermitRootLogin</label>
+    <select id="ssh_permit_root_login">
+      <option value="yes">✅ Yes</option>
+      <option value="no">❌ No</option>
+    </select>
+    <label for="ssh_password_auth">PasswordAuthentication</label>
+    <select id="ssh_password_auth">
+      <option value="yes">✅ Yes</option>
+      <option value="no">❌ No</option>
+    </select>
+    <label for="ssh_pubkey_auth">PubkeyAuthentication</label>
+    <select id="ssh_pubkey_auth">
+      <option value="yes">✅ Yes</option>
+      <option value="no">❌ No</option>
+    </select>
+  </div>
+
+  <!-- Region & Locale -->
+  <div class="section">
+    <h2>🌍 Region & Locale</h2>
+    <label for="wifi_country">Wi-Fi Country</label>
+    <select id="wifi_country"></select>
+
+    <label for="timezone">Timezone</label>
+    <select id="timezone"></select>
+
+    <label for="keyboard">Keyboard Layout</label>
+    <select id="keyboard"></select>
+
+    <label for="keyboard_custom">Custom Keyboard (if layout=custom)</label>
+    <input type="text" id="keyboard_custom" placeholder="e.g. us,intl">
+  </div>
+
+  <!-- Submit -->
+  <button onclick="triggerBuild()">🚀 Start Build</button>
 
   <script>
-    // --- Theme toggle ---
-    const root = document.documentElement;
-    const themeToggle = document.getElementById('themeToggle');
-    const storedTheme = localStorage.getItem('lg_theme');
-    if (storedTheme === 'dark' || (!storedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-      document.body.classList.add('dark');
-    }
-    themeToggle.addEventListener('click', () => {
-      document.body.classList.toggle('dark');
-      localStorage.setItem('lg_theme', document.body.classList.contains('dark') ? 'dark' : 'light');
-    });
+    async function loadOptions() {
+      const [countries, timezones, keyboards] = await Promise.all([
+        fetch('config/countries.json').then(r => r.json()),
+        fetch('config/timezones.json').then(r => r.json()),
+        fetch('config/keyboards.json').then(r => r.json())
+      ]);
 
-    // --- Elements ---
-    const els = {
-      statusDot: document.getElementById('statusDot'),
-      statusText: document.getElementById('statusText'),
-      reloadPresets: document.getElementById('reloadPresets'),
-
-      build_type: document.getElementById('build_type'),
-      cpu_bitrate: document.getElementById('cpu_bitrate'),
-
-      user_name: document.getElementById('user_name'),
-      user_password: document.getElementById('user_password'),
-      wifi_ssid: document.getElementById('wifi_ssid'),
-      wifi_password: document.getElementById('wifi_password'),
-
-      ssh_permit_root_login: document.getElementById('ssh_permit_root_login'),
-      ssh_password_auth: document.getElementById('ssh_password_auth'),
-      ssh_pubkey_auth: document.getElementById('ssh_pubkey_auth'),
-
-      static_ip: document.getElementById('static_ip'),
-      gateway: document.getElementById('gateway'),
-      dns: document.getElementById('dns'),
-
-      wifi_country: document.getElementById('wifi_country'),
-      timezone: document.getElementById('timezone'),
-      keyboard: document.getElementById('keyboard'),
-      keyboard_custom: document.getElementById('keyboard_custom'),
-      kbdCustomWrap: document.getElementById('kbdCustomWrap'),
-
-      preview: document.getElementById('preview'),
-
-      owner: document.getElementById('owner'),
-      repo: document.getElementById('repo'),
-      workflowPath: document.getElementById('workflowPath'),
-      ref: document.getElementById('ref'),
-      token: document.getElementById('token'),
-
-      btnPreview: document.getElementById('btnPreview'),
-      btnDownload: document.getElementById('btnDownload'),
-      btnDispatchMany: document.getElementById('btnDispatchMany'),
-      btnDispatchBlob: document.getElementById('btnDispatchBlob'),
-      toast: document.getElementById('toast'),
-    };
-
-    const cfgPaths = {
-      defaults: "config/defaults.json",
-      build_types: "config/build_types.json",
-      cpu_bitrates: "config/cpu_bitrates.json",
-      wifi_countries: "config/wifi_countries.json",
-      timezones: "config/tz.json",
-      keyboards: "config/kbd.json"
-    };
-
-    function setStatus(ok, msg) {
-      els.statusDot.className = "w-2.5 h-2.5 rounded-full " + (ok ? "bg-emerald-500" : "bg-amber-500 animate-pulse");
-      els.statusText.textContent = msg;
-    }
-
-    function toast(msg, kind = 'info') {
-      els.toast.textContent = msg;
-      els.toast.classList.remove('hidden');
-      els.toast.style.borderColor = kind === 'error' ? '#ef4444' : 'var(--glass-border)';
-      setTimeout(() => { els.toast.classList.add('hidden'); }, 3000);
-    }
-
-    async function fetchJSON(path) {
-      const res = await fetch(path + '?v=' + Date.now());
-      if (!res.ok) throw new Error(`${path} -> ${res.status}`);
-      return res.json();
-    }
-
-    function fillSelect(el, arr, selected) {
-      el.innerHTML = "";
-      for (const v of arr) {
+      const countrySelect = document.getElementById('wifi_country');
+      countries.forEach(c => {
         const opt = document.createElement('option');
-        opt.value = v;
-        opt.textContent = v;
-        el.appendChild(opt);
-      }
-      if (selected != null) el.value = selected;
-    }
-
-    function wireKeyboardCustomToggle() {
-      const update = () => {
-        if (els.keyboard.value === 'custom') {
-          els.kbdCustomWrap.classList.remove('hidden');
-        } else {
-          els.kbdCustomWrap.classList.add('hidden');
-        }
-      };
-      els.keyboard.addEventListener('change', update);
-      update();
-    }
-
-    function isIPv4(x) {
-      if (!x) return true; // optional
-      const parts = x.trim().split('.');
-      if (parts.length !== 4) return false;
-      return parts.every(p => /^\d+$/.test(p) && +p >= 0 && +p <= 255);
-    }
-    function validate() {
-      let ok = true;
-      const ipFields = [els.static_ip, els.gateway];
-      for (const f of ipFields) {
-        f.classList.remove('invalid');
-        if (f.value && !isIPv4(f.value)) { f.classList.add('invalid'); ok = false; }
-      }
-      // DNS semicolon list of IPv4
-      els.dns.classList.remove('invalid');
-      if (els.dns.value) {
-        const parts = els.dns.value.split(';').map(s => s.trim()).filter(Boolean);
-        if (parts.some(p => !isIPv4(p))) { els.dns.classList.add('invalid'); ok = false; }
-      }
-      return ok;
-    }
-
-    function computeTargetBits(build_type, cpu_bitrate) {
-      const base = build_type.startsWith('pi') ? 'pi' : build_type;
-      return `${base} ${cpu_bitrate}`;
-    }
-
-    function currentPayload() {
-      const keyboardSel = els.keyboard.value;
-      const kbFinal = (keyboardSel === 'custom' && els.keyboard_custom.value.trim())
-        ? els.keyboard_custom.value.trim()
-        : keyboardSel;
-
-      const build_type = els.build_type.value;
-      const cpu_bitrate = els.cpu_bitrate.value;
-      const target_bits = computeTargetBits(build_type, cpu_bitrate);
-
-      const obj = {
-        build_type, cpu_bitrate, target_bits,
-        user_name: els.user_name.value,
-        user_password: els.user_password.value,
-        wifi_ssid: els.wifi_ssid.value,
-        wifi_password: els.wifi_password.value,
-        ssh_permit_root_login: els.ssh_permit_root_login.value,
-        ssh_password_auth: els.ssh_password_auth.value,
-        ssh_pubkey_auth: els.ssh_pubkey_auth.value,
-        static_ip: els.static_ip.value,
-        gateway: els.gateway.value,
-        dns: els.dns.value,
-        wifi_country: els.wifi_country.value,
-        timezone: els.timezone.value,
-        keyboard: kbFinal,
-        keyboard_custom: (keyboardSel === 'custom' ? els.keyboard_custom.value : "")
-      };
-      // Save to localStorage
-      localStorage.setItem('lg_inputs', JSON.stringify(obj));
-      return obj;
-    }
-
-    function loadSavedInputs() {
-      try {
-        const raw = localStorage.getItem('lg_inputs');
-        return raw ? JSON.parse(raw) : null;
-      } catch { return null; }
-    }
-
-    function downloadJSON(obj, filename) {
-      const blob = new Blob([JSON.stringify(obj, null, 2)], {type: "application/json"});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a"); a.href = url; a.download = filename; a.click();
-      URL.revokeObjectURL(url);
-    }
-
-    async function dispatchWorkflowManyInputs(owner, repo, workflowPath, ref, token, inputs) {
-      const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/actions/workflows/${encodeURIComponent(workflowPath)}/dispatches`;
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/vnd.github+json',
-          'X-GitHub-Api-Version': '2022-11-28',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ ref, inputs })
+        opt.value = c.code;
+        opt.textContent = `${c.flag} ${c.name} (${c.code})`;
+        countrySelect.appendChild(opt);
       });
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`Dispatch failed ${res.status}: ${text}`);
-      }
+
+      const timezoneSelect = document.getElementById('timezone');
+      timezones.forEach(tz => {
+        const opt = document.createElement('option');
+        opt.value = tz;
+        opt.textContent = tz;
+        timezoneSelect.appendChild(opt);
+      });
+
+      const keyboardSelect = document.getElementById('keyboard');
+      keyboards.forEach(k => {
+        const opt = document.createElement('option');
+        opt.value = k;
+        opt.textContent = k;
+        keyboardSelect.appendChild(opt);
+      });
     }
 
-    async function dispatchWorkflowBlob(owner, repo, workflowPath, ref, token, inputs) {
-      const compact = { ...inputs };
-      const { target_bits } = compact;
-      delete compact.target_bits;
-      const blob = btoa(unescape(encodeURIComponent(JSON.stringify(compact))));
-      const minimal = { target_bits, config_blob: blob };
-      return dispatchWorkflowManyInputs(owner, repo, workflowPath, ref, token, minimal);
-    }
-
-    async function loadPresets() {
-      setStatus(false, 'Loading presets…');
-      try {
-        const [defaults, build_types, cpu_bitrates, countries, timezones, keyboards] =
-          await Promise.all([
-            fetchJSON(cfgPaths.defaults),
-            fetchJSON(cfgPaths.build_types),
-            fetchJSON(cfgPaths.cpu_bitrates),
-            fetchJSON(cfgPaths.wifi_countries),
-            fetchJSON(cfgPaths.timezones),
-            fetchJSON(cfgPaths.keyboards),
-          ]);
-
-        // Fill selects
-        fillSelect(els.build_type, build_types, defaults.build_type);
-        fillSelect(els.cpu_bitrate, cpu_bitrates, defaults.cpu_bitrate);
-
-        fillSelect(els.wifi_country, countries, defaults.wifi_country || 'AU');
-        fillSelect(els.timezone, timezones, defaults.timezone || 'UTC');
-        fillSelect(els.keyboard, keyboards, defaults.keyboard || 'us');
-
-        // Defaults for inputs
-        const saved = loadSavedInputs();
-        const src = saved || defaults || {};
-        els.user_name.value = src.user_name || '';
-        els.user_password.value = src.user_password || '';
-        els.wifi_ssid.value = src.wifi_ssid || '';
-        els.wifi_password.value = src.wifi_password || '';
-        els.static_ip.value = src.static_ip || '';
-        els.gateway.value = src.gateway || '';
-        els.dns.value = src.dns || '';
-
-        els.ssh_permit_root_login.value = src.ssh_permit_root_login || 'prohibit-password';
-        els.ssh_password_auth.value = src.ssh_password_auth || 'yes';
-        els.ssh_pubkey_auth.value = src.ssh_pubkey_auth || 'yes';
-
-        if ((src.keyboard || defaults.keyboard) === 'custom') {
-          els.keyboard_custom.value = src.keyboard_custom || defaults.keyboard_custom || '';
+    function triggerBuild() {
+      // collect values
+      const payload = {
+        ref: "main",
+        inputs: {
+          target_bits: document.getElementById('target_bits').value,
+          user_name: document.getElementById('user_name').value,
+          user_password: document.getElementById('user_password').value,
+          wifi_ssid: document.getElementById('wifi_ssid').value,
+          wifi_password: document.getElementById('wifi_password').value,
+          static_ip: document.getElementById('static_ip').value,
+          gateway: document.getElementById('gateway').value,
+          dns: document.getElementById('dns').value,
+          ssh_permit_root_login: document.getElementById('ssh_permit_root_login').value,
+          ssh_password_auth: document.getElementById('ssh_password_auth').value,
+          ssh_pubkey_auth: document.getElementById('ssh_pubkey_auth').value,
+          wifi_country: document.getElementById('wifi_country').value,
+          timezone: document.getElementById('timezone').value,
+          keyboard: document.getElementById('keyboard').value,
+          keyboard_custom: document.getElementById('keyboard_custom').value,
         }
-        wireKeyboardCustomToggle();
-
-        setStatus(true, 'Presets loaded.');
-        toast('Presets loaded ✔');
-      } catch (e) {
-        console.error(e);
-        setStatus(false, 'Failed to load presets. Check /config/*.json');
-        toast('Failed to load presets', 'error');
-      }
+      };
+      console.log("Build payload:", payload);
+      alert("🚧 This will trigger the GitHub Actions workflow!\n\nCheck console for JSON payload.");
     }
 
-    // --- Init ---
-    loadPresets();
-    els.reloadPresets.addEventListener('click', (e) => { e.preventDefault(); loadPresets(); });
-
-    // Preview & download
-    els.btnPreview.addEventListener('click', () => {
-      if (!validate()) { toast('Fix invalid IP/DNS values', 'error'); return; }
-      const payload = currentPayload();
-      els.preview.textContent = JSON.stringify(payload, null, 2);
-      toast('Payload ready');
-    });
-
-    els.btnDownload.addEventListener('click', () => {
-      if (!validate()) { toast('Fix invalid IP/DNS values', 'error'); return; }
-      const payload = currentPayload();
-      downloadJSON(payload, 'inputs.json');
-      toast('Downloaded inputs.json');
-    });
-
-    // Dispatchers
-    els.btnDispatchMany.addEventListener('click', async () => {
-      if (!validate()) { toast('Fix invalid IP/DNS values', 'error'); return; }
-      const owner = els.owner.value.trim();
-      const repo = els.repo.value.trim();
-      const path = els.workflowPath.value.trim();
-      const ref = els.ref.value.trim();
-      const token = els.token.value.trim();
-      if (!owner || !repo || !path || !ref || !token) { toast('Fill owner/repo/path/ref/token', 'error'); return; }
-      const payload = currentPayload();
-      els.preview.textContent = JSON.stringify(payload, null, 2);
-      try {
-        await dispatchWorkflowManyInputs(owner, repo, path, ref, token, payload);
-        toast('Workflow dispatched ✔');
-      } catch (e) {
-        toast(e.message, 'error');
-      }
-    });
-
-    els.btnDispatchBlob.addEventListener('click', async () => {
-      if (!validate()) { toast('Fix invalid IP/DNS values', 'error'); return; }
-      const owner = els.owner.value.trim();
-      const repo = els.repo.value.trim();
-      const path = els.workflowPath.value.trim();
-      const ref = els.ref.value.trim();
-      const token = els.token.value.trim();
-      if (!owner || !repo || !path || !ref || !token) { toast('Fill owner/repo/path/ref/token', 'error'); return; }
-      const payload = currentPayload();
-      els.preview.textContent = JSON.stringify(payload, null, 2);
-      try {
-        await dispatchWorkflowBlob(owner, repo, path, ref, token, payload);
-        toast('Workflow dispatched (compact) ✔');
-      } catch (e) {
-        toast(e.message, 'error');
-      }
-    });
+    loadOptions();
   </script>
 </body>
 </html>
