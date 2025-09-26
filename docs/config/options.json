@@ -24,7 +24,46 @@
     "keyboard_custom": ""
   },
 
-  "build_types": ["pi"],
+  "build_types": [
+    "pi",
+    "pi-zero",
+    "pi-2",
+    "pi-3",
+    "pi-4",
+    "pi-5",
+
+    "pc",
+    "x86_64",
+    "i386",
+
+    "armhf-generic",
+    "arm64-generic",
+    "riscv64-generic",
+
+    "jetson",          // NVIDIA Jetson (TX1/TX2/Nano/Xavier/Orin)
+    "rockchip",        // RK3328/RK3399 etc.
+    "allwinner",       // H3/H5/H6 etc.
+    "amlogic",         // S905/S912/S922X etc.
+
+    "beaglebone",
+    "odroid",
+    "pine64",
+    "nanopi",
+    "bananapi",
+    "orangepi",
+
+    "imx6",
+    "imx8",
+
+    "qemu",            // headless VM image
+    "virtualbox",
+    "vmware",
+
+    "chromebook",      // generic ChromeOS device (custom Linux image)
+
+    "android-aosp",    // AOSP build target
+    "android-lineage"  // LineageOS build target
+  ],
 
   "cpu_bitrates": ["64bit", "32bit"],
 
