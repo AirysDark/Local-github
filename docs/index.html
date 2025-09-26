@@ -58,19 +58,20 @@
   }
   .btn:hover{filter:brightness(1.05)}
   .btn:active{transform:translateY(1px)}
+  .btn.secondary{
+    background:linear-gradient(180deg,#67e8a6,#45d089); color:#072316;
+  }
   .out{
     background:var(--panel-2); border:1px solid var(--line); border-radius:12px;
     padding:12px; white-space:pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
     min-height:90px;
   }
   .chips{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
-  .chip{
-    font-size:12px; padding:6px 8px; border-radius:999px; background:var(--chip);
-    border:1px solid var(--line); color:var(--muted);
-  }
+  .chip{font-size:12px; padding:6px 8px; border-radius:999px; background:var(--chip); border:1px solid var(--line); color:var(--muted);}
   .kbd{background:#0e2135; border:1px solid #1c314a; padding:2px 6px; border-radius:6px}
-  .inline{display:inline-flex; align-items:center; gap:8px}
   .footer-note{color:var(--muted); font-size:12px; margin-top:6px}
+  .status{font-size:13px; color:var(--muted); margin-top:8px}
+  .danger{color:#ff8484}
 </style>
 </head>
 <body>
@@ -84,14 +85,42 @@
         </div>
         <div>
           <h1>Local-github Builder</h1>
-          <div class="sub">No SSH/static-IP presets. Dynamic dropdowns from <span class="kbd">config/options.json</span>.</div>
+          <div class="sub">Build + download your image directly from this page (token is kept in-memory only).</div>
         </div>
       </div>
       <div class="chips">
         <span class="chip">Raspberry Pi</span>
         <span class="chip">Headless</span>
-        <span class="chip">Workflow Dispatch</span>
+        <span class="chip">Pages → Actions</span>
       </div>
+    </div>
+
+    <!-- repo + token -->
+    <div class="card" style="margin-top:16px">
+      <h3>Repository & token</h3>
+      <div class="row2">
+        <div>
+          <label>Owner</label>
+          <input id="owner" placeholder="e.g. your-username">
+        </div>
+        <div>
+          <label>Repo</label>
+          <input id="repo" placeholder="e.g. Local-github">
+        </div>
+      </div>
+      <div class="row2">
+        <div>
+          <label>Workflow path (in repo)</label>
+          <input id="workflow_path" value=".github/workflows/build.yml">
+        </div>
+        <div>
+          <label>Branch ref</label>
+          <input id="branch_ref" value="main">
+        </div>
+      </div>
+      <label>Personal Access Token (fine-grained; Actions: write, Contents: read)</label>
+      <input id="token" type="password" placeholder="ghp_… (NOT stored)">
+      <div class="footer-note">Your token is used in requests from your browser to api.github.com and never stored.</div>
     </div>
 
     <!-- Build target + User -->
@@ -114,7 +143,7 @@
             </select>
           </div>
         </div>
-        <div class="hint">`target_bits` is computed from these and sent as <span class="kbd">"pi 64bit"</span> / <span class="kbd">"pi 32bit"</span>. The visible field stays “auto”.</div>
+        <div class="hint">`target_bits` is computed and sent as “pi 64bit” / “pi 32bit”.</div>
       </div>
 
       <div class="card">
@@ -143,9 +172,6 @@
 
       <div class="card">
         <h3>SSH</h3>
-        <div class="inline">
-          <span class="hint">Use <code class="kbd">yes</code>, <code class="kbd">no</code>, or <code class="kbd">prohibit-password</code>.</span>
-        </div>
         <label>PermitRootLogin</label>
         <select id="ssh_prl">
           <option value="yes">yes</option>
@@ -174,7 +200,7 @@
         <div class="row2">
           <div>
             <label>Static IPv4</label>
-            <input id="static_ip" placeholder="192.168.0.8" />
+            <input id="static_ip" placeholder="192.168.0.130" />
           </div>
           <div>
             <label>Gateway IPv4</label>
@@ -202,34 +228,33 @@
       </div>
     </div>
 
-    <!-- Build -->
+    <!-- Build + progress + download -->
     <div class="card" style="margin-top:16px">
       <div class="row2">
         <div>
-          <button class="btn" id="buildBtn" type="button">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="#012233" aria-hidden="true"><path d="M13 3a9 9 0 1 0 8.485 6H19a7 7 0 1 1-2.05-4.95L15 6h6V0l-2.293 2.293A8.962 8.962 0 0 0 13 3z"/></svg>
-            Show build payload
-          </button>
-          <div class="footer-note">This page <strong>does not send</strong> anything. Copy the curl and run it locally.</div>
+          <button class="btn" id="startBtn" type="button">Start build</button>
+          <div class="footer-note">This page will dispatch the workflow, watch it finish, then fetch the artifact.</div>
         </div>
         <div>
-          <label>Personal Access Token (optional; only inserted into the curl shown below)</label>
-          <input id="token" type="password" placeholder="ghp_… (NOT sent by this page)"/>
+          <button class="btn secondary" id="downloadBtn" type="button" style="display:none">Download OS (.zip)</button>
+          <div id="downloadInfo" class="footer-note"></div>
         </div>
       </div>
 
+      <div class="status" id="status">Idle.</div>
+
       <h3 style="margin-top:16px">workflow_dispatch JSON</h3>
-      <div id="jsonOut" class="out">Click “Show build payload”.</div>
+      <div id="jsonOut" class="out">—</div>
 
-      <h3 style="margin-top:16px">curl command (copy &amp; run locally)</h3>
-      <div id="curlOut" class="out">—</div>
-
-      <h3 style="margin-top:16px">Endpoint</h3>
-      <div id="repoOut" class="out">Set this in your terminal: OWNER, REPO, and workflow path</div>
+      <h3 style="margin-top:16px">Diagnostics</h3>
+      <div id="diag" class="out">—</div>
     </div>
   </div>
 
 <script>
+/* ------------------- helpers ------------------- */
+function diag(msg){ const d=document.getElementById('diag'); d.textContent=(d.textContent==='—'?'':d.textContent+'\n')+msg; }
+function setStatus(msg){ document.getElementById('status').textContent = msg; }
 function targetBitsComputed(){
   return document.getElementById('build_type').value + ' ' + document.getElementById('cpu_bitrate').value;
 }
@@ -238,7 +263,7 @@ function toggleKeyboardCustom(){
   document.getElementById('kb_custom_label').style.display = (val === 'custom') ? 'block' : 'none';
 }
 function gatherInputs(){
-  return {
+  const inputs = {
     target_bits: targetBitsComputed(),
     user_name: document.getElementById('user_name').value,
     user_password: document.getElementById('user_password').value,
@@ -255,30 +280,35 @@ function gatherInputs(){
     keyboard: document.getElementById('keyboard').value,
     keyboard_custom: document.getElementById('keyboard_custom').value
   };
+  document.getElementById('jsonOut').textContent = JSON.stringify({ref:getRef(), inputs}, null, 2);
+  return inputs;
 }
-function showPayload(){
-  const ref = "main";
-  const body = { ref, inputs: gatherInputs() };
+function getOwner(){ return document.getElementById('owner').value.trim(); }
+function getRepo(){ return document.getElementById('repo').value.trim(); }
+function getWorkflowPath(){ return document.getElementById('workflow_path').value.trim(); }
+function getRef(){ return document.getElementById('branch_ref').value.trim() || 'main'; }
+function getToken(){ return document.getElementById('token').value.trim(); }
 
-  const token = (document.getElementById('token').value || '').trim();
-  const endpoint = `https://api.github.com/repos/OWNER/REPO/actions/workflows/.github/workflows/build.yml/dispatches`;
-
-  document.getElementById('jsonOut').textContent = JSON.stringify(body, null, 2);
-  document.getElementById('repoOut').textContent = endpoint;
-
-  const authHeader = token ? `  -H "Authorization: Bearer ${token}" \\` : '  # -H "Authorization: Bearer <TOKEN)" \\';
-  const curl = [
-    'curl -s -X POST \\',
-    '  -H "Accept: application/vnd.github+json" \\',
-    '  -H "X-GitHub-Api-Version: 2022-11-28" \\',
-     authHeader,
-     '  ' + endpoint + ' \\',
-    "  -d '" + JSON.stringify(body).replace(/'/g,"'\"'\"'") + "'"
-  ].join('\\\n').replace(/\\\\n/g,'\n');
-  document.getElementById('curlOut').textContent = curl;
+async function gh(method, path, token, body){
+  const url = `https://api.github.com${path}`;
+  const res = await fetch(url, {
+    method,
+    headers: {
+      'Accept':'application/vnd.github+json',
+      'X-GitHub-Api-Version':'2022-11-28',
+      ...(token ? {'Authorization':`Bearer ${token}`} : {})
+    },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if (!res.ok){
+    const text = await res.text().catch(()=> '');
+    throw new Error(`${method} ${path} -> ${res.status} ${res.statusText} :: ${text}`);
+  }
+  if (res.status === 204) return null;
+  return res.json();
 }
-document.getElementById('buildBtn').addEventListener('click', showPayload);
 
+/* ------------------- options.json loading ------------------- */
 function fillSelect(id, arr, labelfn, valuefn, placeholder){
   const el = document.getElementById(id);
   el.innerHTML = '';
@@ -301,82 +331,140 @@ function onPresetChange(selId, setter){
     try { setter(JSON.parse(opt.dataset.raw)); } catch(e){}
   });
 }
-
-// ------- Embedded fallback (works even with file://) -------
-const embeddedFallback = {
-  users: [{name:"AirysDark", password:"Zombie1986X2"}],
-  wifi: [{ssid:"Raspbain", password:"Zombie1986X2"}],
-  countries: ["AU","US","GB","NZ","CA"],
-  timezones: ["Australia/Sydney","UTC","Europe/London","America/New_York"],
-  keyboards: ["au","us","gb","us(intl)","custom"]
-};
-
-function normalizeOptions(js){
-  // Accept alias keys and ensure arrays exist; otherwise use fallback
-  const countries = (js.wifi_countries || js.country || []).filter(Boolean);
-  const zones     = (js.timezones || js.tz || []).filter(Boolean);
-  const kbs       = (js.keyboards || js.kbd || []).filter(Boolean);
-  const users     = (js.users || []).filter(Boolean);
-  const wifis     = (js.wifi  || []).filter(Boolean);
-
-  return {
-    countries: countries.length ? countries : embeddedFallback.countries,
-    zones:     zones.length     ? zones     : embeddedFallback.timezones,
-    kbs:       kbs.length       ? kbs       : embeddedFallback.keyboards,
-    users:     users.length     ? users     : embeddedFallback.users,
-    wifis:     wifis.length     ? wifis     : embeddedFallback.wifi
-  };
-}
-
 async function loadOptions(){
-  // Works on Pages and locally; stops at first success
-  const urls = ['config/options.json','./config/options.json','/config/options.json'];
-  let js=null, fetched=false;
+  const urls = [`config/options.json?v=${Date.now()}`, `./config/options.json?v=${Date.now()}`, `/config/options.json?v=${Date.now()}`];
+  let js=null, fetched=false, lastErr='';
   for (const u of urls){
-    try{
-      const r=await fetch(u,{cache:'no-store'});
-      if(r.ok){ js=await r.json(); fetched=true; break; }
-    }catch(e){}
+    try{ const r=await fetch(u,{cache:'no-store'}); if(r.ok){ js=await r.json(); fetched=true; diag(`Loaded ${u}`); break; } else lastErr=`${u} -> ${r.status}`; }catch(e){ lastErr = `${u} -> ${e}`; }
   }
-  if(!fetched){
-    js = {}; // force fallback
-    document.getElementById('jsonOut').textContent =
-      'Note: using embedded defaults (could not fetch config/options.json).';
-  }
+  if(!fetched){ diag(`Could not load options.json (${lastErr}). Using built-in minimal lists.`); js={}; }
 
-  const opts = normalizeOptions(js);
+  const countries = (js.wifi_countries || js.country || ["AU","US","GB","NZ","CA"]);
+  const zones     = (js.timezones || js.tz || ["Australia/Sydney","UTC","Europe/London","America/New_York"]);
+  const kbs       = (js.keyboards || js.kbd || ["au","us","gb","us(intl)","custom"]);
+  const users     = (js.users || [{name:"AirysDark", password:"Zombie1986X2"}]);
+  const wifis     = (js.wifi  || [{ssid:"Raspbain",  password:"Zombie1986X2"}]);
 
-  // Populate Region & Locale
-  fillSelect('wifi_country', opts.countries, v=>v, v=>v, '(Wi-Fi country)');
-  fillSelect('timezone', opts.zones, v=>v, v=>v, '(Timezone)');
-  fillSelect('keyboard', opts.kbs, v=>v, v=>v, '(Keyboard)');
+  fillSelect('wifi_country', countries, v=>v, v=>v, '(Wi-Fi country)');
+  fillSelect('timezone', zones, v=>v, v=>v, '(Timezone)');
+  fillSelect('keyboard', kbs, v=>v, v=>v, '(Keyboard)');
 
-  // Presets (user + wifi only)
-  fillSelect('user_preset', opts.users, u=>u.name, u=>u.name, '(no user preset)');
-  fillSelect('wifi_preset', opts.wifis, w=>w.ssid, w=>w.ssid, '(no Wi-Fi preset)');
+  fillSelect('user_preset', users, u=>u.name, u=>u.name, '(no user preset)');
+  fillSelect('wifi_preset', wifis, w=>w.ssid, w=>w.ssid, '(no Wi-Fi preset)');
 
-  // Change handlers to auto-fill the text inputs
-  onPresetChange('user_preset', (u)=>{
-    document.getElementById('user_name').value = u.name || '';
-    document.getElementById('user_password').value = u.password || '';
-  });
-  onPresetChange('wifi_preset', (w)=>{
-    document.getElementById('wifi_ssid').value = w.ssid || '';
-    document.getElementById('wifi_password').value = w.password || '';
-  });
+  onPresetChange('user_preset', (u)=>{ user_name.value = u.name || ''; user_password.value = u.password || ''; });
+  onPresetChange('wifi_preset', (w)=>{ wifi_ssid.value = w.ssid || ''; wifi_password.value = w.password || ''; });
 
-  // Auto-apply first preset if present
-  if(opts.users.length){
-    const s=document.getElementById('user_preset');
-    s.selectedIndex=1; s.dispatchEvent(new Event('change'));
-  }
-  if(opts.wifis.length){
-    const s=document.getElementById('wifi_preset');
-    s.selectedIndex=1; s.dispatchEvent(new Event('change'));
+  if(users.length){ const s=document.getElementById('user_preset'); s.selectedIndex=1; s.dispatchEvent(new Event('change')); }
+  if(wifis.length){ const s=document.getElementById('wifi_preset'); s.selectedIndex=1; s.dispatchEvent(new Event('change')); }
+  toggleKeyboardCustom();
+}
+loadOptions();
+
+/* ------------------- build flow ------------------- */
+async function dispatchWorkflow(){
+  const owner=getOwner(), repo=getRepo(), token=getToken(), ref=getRef(), path=getWorkflowPath();
+  if(!owner || !repo || !token){ throw new Error('Missing Owner, Repo or Token'); }
+  // POST /repos/{owner}/{repo}/actions/workflows/{workflow_id}/dispatches
+  const body = { ref, inputs: gatherInputs() };
+  const wfPathEncoded = encodeURIComponent(path);
+  await gh('POST', `/repos/${owner}/${repo}/actions/workflows/${wfPathEncoded}/dispatches`, token, body);
+  return body;
+}
+async function findRecentRunId(afterISO){
+  const owner=getOwner(), repo=getRepo(), token=getToken();
+  // GET /repos/{owner}/{repo}/actions/runs?event=workflow_dispatch
+  const list = await gh('GET', `/repos/${owner}/${repo}/actions/runs?event=workflow_dispatch&per_page=10`, token);
+  const runs = (list.workflow_runs||[]).filter(r => new Date(r.created_at) >= new Date(afterISO));
+  // pick the newest run for our branch
+  const ref = getRef();
+  const match = runs.find(r => r.head_branch === ref);
+  return match ? match.id : null;
+}
+async function waitForRun(runId, onTick){
+  const owner=getOwner(), repo=getRepo(), token=getToken();
+  let delay=4000, maxDelay=15000;
+  while(true){
+    const run = await gh('GET', `/repos/${owner}/${repo}/actions/runs/${runId}`, token);
+    onTick?.(run);
+    if (run.status === 'completed'){
+      if (run.conclusion !== 'success') throw new Error(`Run completed with conclusion=${run.conclusion}`);
+      return run;
+    }
+    await new Promise(r=>setTimeout(r, delay));
+    delay = Math.min(maxDelay, Math.floor(delay*1.25));
   }
 }
+async function getFirstArtifact(runId){
+  const owner=getOwner(), repo=getRepo(), token=getToken();
+  const arts = await gh('GET', `/repos/${owner}/${repo}/actions/runs/${runId}/artifacts`, token);
+  if (!arts || !arts.artifacts || !arts.artifacts.length) throw new Error('No artifacts found on the run.');
+  // prefer one named "Local-github-pi" if present
+  const preferred = arts.artifacts.find(a => a.name.toLowerCase().includes('local-github'));
+  return preferred || arts.artifacts[0];
+}
+async function downloadArtifactZip(artifact){
+  const owner=getOwner(), repo=getRepo(), token=getToken();
+  const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/actions/artifacts/${artifact.id}/zip`, {
+    headers: {
+      'Accept':'application/vnd.github+json',
+      'Authorization': `Bearer ${token}`,
+      'X-GitHub-Api-Version':'2022-11-28'
+    }
+  });
+  if(!res.ok){ throw new Error(`Download ZIP -> ${res.status} ${res.statusText}`); }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const ts = new Date().toISOString().replace(/[:.]/g,'-');
+  a.href=url; a.download = `${artifact.name || 'artifact'}-${ts}.zip`;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
 
-loadOptions();
+/* ------------------- wire up UI ------------------- */
+document.getElementById('startBtn').addEventListener('click', async ()=>{
+  try{
+    document.getElementById('downloadBtn').style.display='none';
+    document.getElementById('downloadInfo').textContent='';
+    setStatus('Dispatching workflow…');
+    const startedAt = new Date().toISOString();
+
+    const payload = await dispatchWorkflow();
+    diag('Dispatched with payload: ' + JSON.stringify(payload));
+
+    setStatus('Looking for the run…');
+    let runId=null;
+    // poll to find run id
+    for(let i=0;i<12;i++){
+      runId = await findRecentRunId(startedAt);
+      if (runId) break;
+      await new Promise(r=>setTimeout(r, 3000));
+    }
+    if(!runId) throw new Error('Could not find the workflow run after dispatch.');
+
+    setStatus(`Run #${runId} in progress… (this can take a while)`);
+    await waitForRun(runId, (run)=>{
+      setStatus(`Run #${run.id}: ${run.status} ${run.name} — ${run.head_branch}`);
+    });
+
+    setStatus(`Run succeeded. Collecting artifact…`);
+    const art = await getFirstArtifact(runId);
+    document.getElementById('downloadBtn').style.display='inline-flex';
+    document.getElementById('downloadInfo').textContent = `Ready: ${art.name} (id: ${art.id})`;
+    document.getElementById('downloadBtn').onclick = async ()=>{
+      try{
+        setStatus('Downloading artifact…');
+        await downloadArtifactZip(art);
+        setStatus('Download started.');
+      }catch(e){
+        setStatus('Download failed.'); diag('Download error: '+e.message);
+      }
+    };
+  }catch(e){
+    setStatus('Error. See diagnostics.'); diag('ERROR: ' + e.message);
+  }
+});
 </script>
 </body>
 </html>
