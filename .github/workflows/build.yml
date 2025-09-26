@@ -1,4 +1,4 @@
-name: Build Local-github (Pi — YAML-clean)
+name: Build Local-github (Pi ? Clean)
 
 on:
   workflow_dispatch:
@@ -13,57 +13,56 @@ on:
         type: choice
         description: "Console username:password"
         options:
-          - User:password
-          - AirysDark:Zombie1986X2
-          - chip:raspberry
-        default: AirysDark:Zombie1986X2
+          - "User:password"
+          - "AirysDark:Zombie1986X2"
+          - "chip:raspberry"
+        default: "AirysDark:Zombie1986X2"
 
       wifi_creds:
         type: choice
         description: "Wi-Fi SSID:password"
         options:
-          - WI-FI SSID:password
-          - Raspbain:Zombie1986X2
-          - YourWiFi:YourPassword
-        default: Raspbain:Zombie1986X2
+          - "WI-FI SSID:password"
+          - "Raspbain:Zombie1986X2"
+          - "YourWiFi:YourPassword"
+        default: "Raspbain:Zombie1986X2"
 
       ssh_options:
         type: choice
         description: "SSH options (PermitRootLogin:PasswordAuth:PubkeyAuth)"
         options:
-          - true:true:true
-          - prohibit-password:true:true
-          - false:true:true
-          - true:false:true
-          - false:false:true
-          - true:true:false
-        default: true:true:true
+          - "true:true:true"
+          - "prohibit-password:true:true"
+          - "false:true:true"
+          - "true:false:true"
+          - "false:false:true"
+          - "true:true:false"
+        default: "true:true:true"
 
       net_ipv4:
         type: choice
         description: "Static IPv4:Gateway:DNS(semicolon-separated)"
         options:
-          - 192.168.0.8:192.168.0.1:1.1.1.1;8.8.8.8
-          - 192.168.1.50:192.168.1.1:1.1.1.1;8.8.8.8
-          - 10.0.0.50:10.0.0.1:9.9.9.9;1.1.1.1
-        default: 192.168.0.8:192.168.0.1:1.1.1.1;8.8.8.8
+          - "192.168.0.8:192.168.0.1:1.1.1.1;8.8.8.8"
+          - "192.168.1.50:192.168.1.1:1.1.1.1;8.8.8.8"
+          - "10.0.0.50:10.0.0.1:9.9.9.9;1.1.1.1"
+        default: "192.168.0.8:192.168.0.1:1.1.1.1;8.8.8.8"
 
       wifi_country:
         description: "Wi-Fi country (ISO 3166-1 alpha-2)"
-        default: AU
+        default: "AU"
 
       timezone:
         description: "Timezone (IANA tzdb)"
-        default: Australia/Sydney
+        default: "Australia/Sydney"
 
       keyboard:
         description: "Keyboard layout (XKB)"
-        default: us
+        default: "us"
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
@@ -84,11 +83,10 @@ jobs:
         shell: bash
         run: |
           set -e
-          BIT="${{ steps.tgt.outputs.bit_type }}"
+          BIT='${{ steps.tgt.outputs.bit_type }}'
           PI="arm64"
           if [ "$BIT" = "32bit" ]; then PI="armhf"; fi
           echo "pi=$PI" >> "$GITHUB_OUTPUT"
-          echo "Resolved: pi=$PI"
 
       - name: Parse paired credentials
         id: creds
@@ -101,10 +99,10 @@ jobs:
           USERPASS="${USER_PAIR#*:}"
           WIFI_SSID="${WIFI_PAIR%%:*}"
           WIFI_PASSWORD="${WIFI_PAIR#*:}"
-          echo "username=$USERNAME"            >> "$GITHUB_OUTPUT"
-          echo "userpass=$USERPASS"            >> "$GITHUB_OUTPUT"
-          echo "wifi_ssid=$WIFI_SSID"          >> "$GITHUB_OUTPUT"
-          echo "wifi_password=$WIFI_PASSWORD"  >> "$GITHUB_OUTPUT"
+          echo "username=$USERNAME"           >> "$GITHUB_OUTPUT"
+          echo "userpass=$USERPASS"           >> "$GITHUB_OUTPUT"
+          echo "wifi_ssid=$WIFI_SSID"         >> "$GITHUB_OUTPUT"
+          echo "wifi_password=$WIFI_PASSWORD" >> "$GITHUB_OUTPUT"
 
       - name: Parse static IPv4 tuple
         id: net
@@ -116,10 +114,9 @@ jobs:
           REST="${TUPLE#*:}"
           GW="${REST%%:*}"
           DNS="${REST#*:}"
-          echo "static_ip=$IP"    >> "$GITHUB_OUTPUT"
-          echo "gateway=$GW"      >> "$GITHUB_OUTPUT"
-          echo "dns=$DNS"         >> "$GITHUB_OUTPUT"
-          echo "Parsed net: ip=$IP gw=$GW dns=$DNS"
+          echo "static_ip=$IP" >> "$GITHUB_OUTPUT"
+          echo "gateway=$GW"   >> "$GITHUB_OUTPUT"
+          echo "dns=$DNS"      >> "$GITHUB_OUTPUT"
 
       - name: Parse SSH options (PermitRootLogin:PasswordAuth:PubkeyAuth)
         id: ssh
@@ -165,16 +162,13 @@ jobs:
           mkdir -p "$BASE/files/etc/default"
           mkdir -p "$BASE/files/etc"
           mkdir -p "$BASE/files/etc/dhcpcd.conf.d"
-          mkdir -p "$BASE/files/usr/local/bin"
 
-          # SSH daemon config
           cat > "$BASE/files/etc/ssh/sshd_config.d/local-github.conf" <<EOF
 PermitRootLogin ${PERMIT_ROOT_LOGIN}
 PasswordAuthentication ${PASSWORD_AUTH}
 PubkeyAuthentication ${PUBKEY_AUTH}
 EOF
 
-          # Wi-Fi config
           cat > "$BASE/files/etc/wpa_supplicant/wpa_supplicant.conf" <<EOF
 ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
 update_config=1
@@ -186,11 +180,9 @@ network={
 }
 EOF
 
-          # Timezone and keyboard
           echo "${TIMEZONE}" > "$BASE/files/etc/timezone"
-          echo "XKBLAYOUT="${KEYBOARD}"" > "$BASE/files/etc/default/keyboard"
+          echo "XKBLAYOUT=\"${KEYBOARD}\"" > "$BASE/files/etc/default/keyboard"
 
-          # Static IPv4 via dhcpcd
           cat > "$BASE/files/etc/dhcpcd.conf.d/local-github.conf" <<EOF
 interface eth0
 static ip_address=${STATIC_IP}/24
@@ -198,43 +190,17 @@ static routers=${GATEWAY}
 static domain_name_servers=${DNS}
 EOF
 
-          # Stage run script to apply hostname and user creds
-          mkdir -p "$BASE/00-run.sh.d"
           cat > "$BASE/00-run.sh" <<'EOS'
 #!/bin/bash
 set -e
-# shellcheck disable=SC1091
-source /etc/os-release || true
-
-# hostname
-if [ -n "${HOSTNAME_VAL}" ]; then
-  echo "${HOSTNAME_VAL}" > /etc/hostname
-  sed -i "s/127.0.1.1.*/127.0.1.1	${HOSTNAME_VAL}/" /etc/hosts || true
-fi
-
-# ensure user
-if ! id "${USER_NAME}" >/dev/null 2>&1; then
-  adduser --disabled-password --gecos "" "${USER_NAME}"
-fi
-echo "${USER_NAME}:${USER_PASS}" | chpasswd
-
-# enable ssh
+# hostname (optional; build-time HOSTNAME_VAL can be added similarly)
 systemctl enable ssh || true
-
-# apply dhcpcd drop-in if present
+# ensure dhcpcd drop-ins are loaded
 if [ -d /etc/dhcpcd.conf.d ]; then
   grep -q '^include /etc/dhcpcd.conf.d' /etc/dhcpcd.conf || echo 'include /etc/dhcpcd.conf.d/*.conf' >> /etc/dhcpcd.conf
 fi
 EOS
           chmod +x "$BASE/00-run.sh"
-
-          # Pass values to the stage script via environment at build time
-          echo "HOSTNAME_VAL=${HOSTNAME}" >> "$BASE/00-run.sh.d/env"
-          echo "USER_NAME=${USERNAME}"    >> "$BASE/00-run.sh.d/env"
-          echo "USER_PASS=${USERPASS}"    >> "$BASE/00-run.sh.d/env"
-
-          # pi-gen will source files in 00-run.sh.d/env before executing 00-run.sh (supported by usimd action)
-          # If not, we can inline export in 00-run.sh, but most builds source env or we can export via config.
 
       - name: Build Raspberry Pi image (pi-gen-action)
         if: ${{ steps.tgt.outputs.target == 'pi' }}
@@ -252,5 +218,5 @@ EOS
         if: ${{ steps.tgt.outputs.target == 'pi' }}
         uses: actions/upload-artifact@v4
         with:
-          name: Local-github-pi-${{ steps.arch.outputs.pi }}
+          name: "Local-github-pi"   # keep this static to avoid YAML/expression weirdness
           path: deploy/*
