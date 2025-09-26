@@ -266,7 +266,7 @@ function showPayload(){
   document.getElementById('jsonOut').textContent = JSON.stringify(body, null, 2);
   document.getElementById('repoOut').textContent = endpoint;
 
-  const authHeader = token ? `  -H "Authorization: Bearer ${token}" \\` : '  # -H "Authorization: Bearer <TOKEN>" \\';
+  const authHeader = token ? `  -H "Authorization: Bearer ${token}" \\` : '  # -H "Authorization: Bearer <TOKEN)" \\';
   const curl = [
     'curl -s -X POST \\',
     '  -H "Accept: application/vnd.github+json" \\',
@@ -301,26 +301,61 @@ function onPresetChange(selId, setter){
     try { setter(JSON.parse(opt.dataset.raw)); } catch(e){}
   });
 }
+
+// ------- Embedded fallback (works even with file://) -------
+const embeddedFallback = {
+  users: [{name:"AirysDark", password:"Zombie1986X2"}],
+  wifi: [{ssid:"Raspbain", password:"Zombie1986X2"}],
+  countries: ["AU","US","GB","NZ","CA"],
+  timezones: ["Australia/Sydney","UTC","Europe/London","America/New_York"],
+  keyboards: ["au","us","gb","us(intl)","custom"]
+};
+
+function normalizeOptions(js){
+  // Accept alias keys and ensure arrays exist; otherwise use fallback
+  const countries = (js.wifi_countries || js.country || []).filter(Boolean);
+  const zones     = (js.timezones || js.tz || []).filter(Boolean);
+  const kbs       = (js.keyboards || js.kbd || []).filter(Boolean);
+  const users     = (js.users || []).filter(Boolean);
+  const wifis     = (js.wifi  || []).filter(Boolean);
+
+  return {
+    countries: countries.length ? countries : embeddedFallback.countries,
+    zones:     zones.length     ? zones     : embeddedFallback.timezones,
+    kbs:       kbs.length       ? kbs       : embeddedFallback.keyboards,
+    users:     users.length     ? users     : embeddedFallback.users,
+    wifis:     wifis.length     ? wifis     : embeddedFallback.wifi
+  };
+}
+
 async function loadOptions(){
+  // Works on Pages and locally; stops at first success
   const urls = ['config/options.json','./config/options.json','/config/options.json'];
-  let js=null;
+  let js=null, fetched=false;
   for (const u of urls){
-    try{ const r=await fetch(u,{cache:'no-store'}); if(r.ok){ js=await r.json(); break; } }catch(e){}
+    try{
+      const r=await fetch(u,{cache:'no-store'});
+      if(r.ok){ js=await r.json(); fetched=true; break; }
+    }catch(e){}
   }
-  if(!js){ document.getElementById('jsonOut').textContent='Could not load config/options.json'; return; }
+  if(!fetched){
+    js = {}; // force fallback
+    document.getElementById('jsonOut').textContent =
+      'Note: using embedded defaults (could not fetch config/options.json).';
+  }
 
-  const countries = js.wifi_countries || js.country || [];
-  const zones = js.timezones || js.tz || [];
-  const kbs = js.keyboards || js.kbd || [];
-  fillSelect('wifi_country', countries, v=>v, v=>v, '(Wi-Fi country)');
-  fillSelect('timezone', zones, v=>v, v=>v, '(Timezone)');
-  fillSelect('keyboard', kbs, v=>v, v=>v, '(Keyboard)');
+  const opts = normalizeOptions(js);
 
-  const users = js.users || [];
-  const wifis = js.wifi || [];
-  fillSelect('user_preset', users, u=>u.name, u=>u.name, '(no user preset)');
-  fillSelect('wifi_preset', wifis, w=>w.ssid, w=>w.ssid, '(no Wi-Fi preset)');
+  // Populate Region & Locale
+  fillSelect('wifi_country', opts.countries, v=>v, v=>v, '(Wi-Fi country)');
+  fillSelect('timezone', opts.zones, v=>v, v=>v, '(Timezone)');
+  fillSelect('keyboard', opts.kbs, v=>v, v=>v, '(Keyboard)');
 
+  // Presets (user + wifi only)
+  fillSelect('user_preset', opts.users, u=>u.name, u=>u.name, '(no user preset)');
+  fillSelect('wifi_preset', opts.wifis, w=>w.ssid, w=>w.ssid, '(no Wi-Fi preset)');
+
+  // Change handlers to auto-fill the text inputs
   onPresetChange('user_preset', (u)=>{
     document.getElementById('user_name').value = u.name || '';
     document.getElementById('user_password').value = u.password || '';
@@ -330,9 +365,17 @@ async function loadOptions(){
     document.getElementById('wifi_password').value = w.password || '';
   });
 
-  if(users.length){ const s=document.getElementById('user_preset'); s.selectedIndex=1; s.dispatchEvent(new Event('change')); }
-  if(wifis.length){ const s=document.getElementById('wifi_preset'); s.selectedIndex=1; s.dispatchEvent(new Event('change')); }
+  // Auto-apply first preset if present
+  if(opts.users.length){
+    const s=document.getElementById('user_preset');
+    s.selectedIndex=1; s.dispatchEvent(new Event('change'));
+  }
+  if(opts.wifis.length){
+    const s=document.getElementById('wifi_preset');
+    s.selectedIndex=1; s.dispatchEvent(new Event('change'));
+  }
 }
+
 loadOptions();
 </script>
 </body>
