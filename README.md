@@ -1,24 +1,8 @@
-# Local-github JSON Presets
+# Local-github options.json (full)
 
-This repo stores preset dropdown choices in `config/options.json` and uses string inputs in the workflow.
-You can pass explicit values or tokens that reference the JSON.
+This file contains expanded preset lists:
+- `wifi_countries`: full ISO 3166-1 alpha-2 country codes
+- `timezones`: broad IANA timezones (common canonical set)
+- `keyboards`: extensive XKB layouts (common + variants)
 
-## Tokens
-- @users:0  → the 1st entry under `users` (name+password)
-- @wifi:1   → the 2nd Wi‑Fi entry (ssid+password)
-- @ssh:2    → the 3rd SSH preset
-- @net:0    → the 1st IPv4 tuple (ip+gateway+dns)
-- @tz:0, @country:0, @kbd:2 for `timezones`, `wifi_countries`, `keyboards`
-
-## Examples
-- user_name: chip
-- user_password: raspberry
-- wifi_ssid: Raspbain
-- wifi_password: Zombie1986X2
-- ssh_permit_root_login: yes|no|prohibit-password
-- ssh_password_auth: yes|no
-- ssh_pubkey_auth: yes|no
-- static_ip: 192.168.0.8
-- gateway: 192.168.0.1
-- dns: 1.1.1.1;8.8.8.8
-- keyboard: us|gb|au|...|custom (if custom, set keyboard_custom)
+All original entries from your uploaded options.json were preserved.
