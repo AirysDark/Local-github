@@ -1,4 +1,4 @@
-name: Build Local-github (Final)
+name: Build Local-github (Pi Real Build)
 
 on:
   workflow_dispatch:
@@ -6,17 +6,8 @@ on:
       target_bits:
         type: choice
         description: "Build target + bitness"
-        options:
-          - pi 64bit
-          - pi 32bit
-          - pc 64bit
-          - pc 32bit
-          - arm64 64bit
-          - armhf 32bit
-          - riscv64 64bit
-          - i386 32bit
-          - i860 32bit
-        default: pi 64bit
+        options: [ "pi 64bit", "pi 32bit" ]
+        default: "pi 64bit"
 
       user_creds:
         type: choice
@@ -29,7 +20,7 @@ on:
 
       wifi_creds:
         type: choice
-        description: "Wi-Fi SSID:password"
+        description: "Wi‑Fi SSID:password"
         options:
           - WI-FI SSID:password
           - Raspbain:Zombie1986X2
@@ -58,7 +49,7 @@ on:
         default: 192.168.0.8:192.168.0.1:1.1.1.1;8.8.8.8
 
       wifi_country:
-        description: "Wi-Fi country (ISO 3166-1 alpha-2)"
+        description: "Wi‑Fi country (ISO 3166‑1 alpha‑2)"
         default: AU
 
       timezone:
@@ -72,6 +63,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
@@ -79,6 +71,7 @@ jobs:
         id: tgt
         shell: bash
         run: |
+          set -e
           SEL='${{ github.event.inputs.target_bits }}'
           TARGET="${SEL% *}"
           BIT="${SEL##* }"
@@ -90,26 +83,140 @@ jobs:
         id: arch
         shell: bash
         run: |
+          set -e
           BIT="${{ steps.tgt.outputs.bit_type }}"
-          PI="arm64"; PC="amd64"; GENERIC="arm64"
-          if [ "$BIT" = "32bit" ]; then PI="armhf"; PC="i386"; GENERIC="i386"; fi
+          PI="arm64"
+          if [ "$BIT" = "32bit" ]; then PI="armhf"; fi
           echo "pi=$PI" >> "$GITHUB_OUTPUT"
-          echo "pc=$PC" >> "$GITHUB_OUTPUT"
-          echo "generic=$GENERIC" >> "$GITHUB_OUTPUT"
-          echo "Resolved: pi=$PI pc=$PC generic=$GENERIC"
+          echo "Resolved: pi=$PI"
 
-      - name: Example pi job
+      - name: Parse paired credentials
+        id: creds
+        shell: bash
+        run: |
+          set -e
+          USER_PAIR='${{ github.event.inputs.user_creds }}'
+          WIFI_PAIR='${{ github.event.inputs.wifi_creds }}'
+          USERNAME="${USER_PAIR%%:*}"
+          USERPASS="${USER_PAIR#*:}"
+          WIFI_SSID="${WIFI_PAIR%%:*}"
+          WIFI_PASSWORD="${WIFI_PAIR#*:}"
+          echo "username=$USERNAME"            >> "$GITHUB_OUTPUT"
+          echo "userpass=$USERPASS"            >> "$GITHUB_OUTPUT"
+          echo "wifi_ssid=$WIFI_SSID"          >> "$GITHUB_OUTPUT"
+          echo "wifi_password=$WIFI_PASSWORD"  >> "$GITHUB_OUTPUT"
+
+      - name: Parse static IPv4 tuple
+        id: net
+        shell: bash
+        run: |
+          set -e
+          TUPLE='${{ github.event.inputs.net_ipv4 }}'
+          IP="${TUPLE%%:*}"
+          REST="${TUPLE#*:}"
+          GW="${REST%%:*}"
+          DNS="${REST#*:}"
+          echo "static_ip=$IP"    >> "$GITHUB_OUTPUT"
+          echo "gateway=$GW"      >> "$GITHUB_OUTPUT"
+          echo "dns=$DNS"         >> "$GITHUB_OUTPUT"
+          echo "Parsed net: ip=$IP gw=$GW dns=$DNS"
+
+      - name: Prepare overlay files
+        shell: bash
+        env:
+          HOSTNAME:           ${{ github.event.inputs.wifi_country }}-${{ steps.tgt.outputs.bit_type }}  # sample
+          WIFI_COUNTRY:       ${{ github.event.inputs.wifi_country }}
+          TIMEZONE:           ${{ github.event.inputs.timezone }}
+          KEYBOARD:           ${{ github.event.inputs.keyboard }}
+          STATIC_IP:          ${{ steps.net.outputs.static_ip }}
+          GATEWAY:            ${{ steps.net.outputs.gateway }}
+          DNS:                ${{ steps.net.outputs.dns }}
+          PERMIT_ROOT_LOGIN:  ${{ steps.ssh.outputs.permit_root_login }}
+          PASSWORD_AUTH:      ${{ steps.ssh.outputs.password_auth }}
+          PUBKEY_AUTH:        ${{ steps.ssh.outputs.pubkey_auth }}
+          USERNAME:           ${{ steps.creds.outputs.username }}
+          USERPASS:           ${{ steps.creds.outputs.userpass }}
+          WIFI_SSID:          ${{ steps.creds.outputs.wifi_ssid }}
+          WIFI_PASSWORD:      ${{ steps.creds.outputs.wifi_password }}
+        run: |
+          set -e
+          # Create minimal config fragments consumed by stage4 hook
+          mkdir -p pi-gen/stage4/05-local-github/files/etc/ssh/sshd_config.d
+          cat > pi-gen/stage4/05-local-github/files/etc/ssh/sshd_config.d/local-github.conf <<'EOF'
+PermitRootLogin __PERMIT_ROOT_LOGIN__
+PasswordAuthentication __PASSWORD_AUTH__
+PubkeyAuthentication __PUBKEY_AUTH__
+EOF
+          mkdir -p pi-gen/stage4/05-local-github/files/etc/wpa_supplicant
+          cat > pi-gen/stage4/05-local-github/files/etc/wpa_supplicant/wpa_supplicant.conf <<'EOF'
+ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
+update_config=1
+country=__WIFI_COUNTRY__
+
+network={
+  ssid="__WIFI_SSID__"
+  psk="__WIFI_PASSWORD__"
+}
+EOF
+          mkdir -p pi-gen/stage4/05-local-github/files/etc
+          echo "__TIMEZONE__" > pi-gen/stage4/05-local-github/files/etc/timezone
+          mkdir -p pi-gen/stage4/05-local-github/files/etc/default
+          echo 'XKBLAYOUT="__KEYBOARD__"' > pi-gen/stage4/05-local-github/files/etc/default/keyboard
+          mkdir -p pi-gen/stage4/05-local-github/files/etc/NetworkManager/system-connections
+          cat > pi-gen/stage4/05-local-github/files/etc/NetworkManager/system-connections/eth0.nmconnection <<'EOF'
+[connection]
+id=eth0
+type=ethernet
+interface-name=eth0
+
+[ipv4]
+address1=__STATIC_IP__/24,__GATEWAY__
+dns=__DNS__
+method=manual
+
+[ipv6]
+addr-gen-mode=default
+method=ignore
+EOF
+          # Substitute placeholders
+          find pi-gen -type f -name '*' -print0 | xargs -0 sed -i             -e "s/__HOSTNAME__/${HOSTNAME}/g"             -e "s/__USERNAME__/${USERNAME}/g"             -e "s/__USERPASS__/${USERPASS}/g"             -e "s/__WIFI_SSID__/${WIFI_SSID}/g"             -e "s/__WIFI_PASSWORD__/${WIFI_PASSWORD}/g"             -e "s/__WIFI_COUNTRY__/${WIFI_COUNTRY}/g"             -e "s#__TIMEZONE__#${TIMEZONE}#g"             -e "s/__KEYBOARD__/${KEYBOARD}/g"             -e "s/__STATIC_IP__/${STATIC_IP}/g"             -e "s/__GATEWAY__/${GATEWAY}/g"             -e "s/__DNS__/${DNS}/g"             -e "s/__PERMIT_ROOT_LOGIN__/${{ steps.ssh.outputs.permit_root_login }}/g"             -e "s/__PASSWORD_AUTH__/${{ steps.ssh.outputs.password_auth }}/g"             -e "s/__PUBKEY_AUTH__/${{ steps.ssh.outputs.pubkey_auth }}/g"
+
+      - name: Parse SSH options (PermitRootLogin:PasswordAuth:PubkeyAuth)
+        id: ssh
+        shell: bash
+        run: |
+          set -e
+          OPT='${{ github.event.inputs.ssh_options }}'
+          IFS=':' read -r PERMIT_ROOT PASSAUTH PUBKEY <<<"$OPT"
+          case "$PERMIT_ROOT" in
+            true|yes|on) PRL="yes" ;;
+            prohibit-password|prohibit_password|prohibit) PRL="prohibit-password" ;;
+            false|no|off) PRL="no" ;;
+            *) PRL="$PERMIT_ROOT" ;;
+          esac
+          case "$PASSAUTH" in true|yes|on) PA="yes" ;; false|no|off) PA="no" ;; *) PA="$PASSAUTH" ;; esac
+          case "$PUBKEY"   in true|yes|on) PK="yes" ;; false|no|off) PK="no" ;; *) PK="$PUBKEY"   ;; esac
+          echo "permit_root_login=$PRL"  >> "$GITHUB_OUTPUT"
+          echo "password_auth=$PA"       >> "$GITHUB_OUTPUT"
+          echo "pubkey_auth=$PK"         >> "$GITHUB_OUTPUT"
+
+      - name: Build Raspberry Pi image (pi-gen-action)
         if: ${{ steps.tgt.outputs.target == 'pi' }}
-        run: echo "Building Pi for ${{ steps.arch.outputs.pi }}"
+        uses: usimd/pi-gen-action@v1
+        with:
+          release: bookworm
+          image_name: Local-github
+          enable_ssh: true
+          stage_list: "stage0 stage1 stage2 stage4"
+          deploy_compression: xz
+          deploy_compression_level: 9
+          deploy_zip: true
+          # architecture input is not always supported by the action; default is arm64
+          # architecture: ${{ steps.arch.outputs.pi }}
 
-      - name: Example pc job
-        if: ${{ steps.tgt.outputs.target == 'pc' }}
-        run: echo "Building PC for ${{ steps.arch.outputs.pc }}"
-
-      - name: Example generic job
-        if: ${{ contains(fromJSON('["arm64","armhf","riscv64","i386"]'), steps.tgt.outputs.target) }}
-        run: echo "Generic build ${{ steps.tgt.outputs.target }} => ${{ steps.arch.outputs.generic }}"
-
-      - name: Example i860 job
-        if: ${{ steps.tgt.outputs.target == 'i860' }}
-        run: echo "i860 placeholder"
+      - name: Upload Pi artifact
+        if: ${{ steps.tgt.outputs.target == 'pi' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: Local-github-pi-${{ steps.arch.outputs.pi }}
+          path: deploy/*
