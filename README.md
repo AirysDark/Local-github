@@ -1,15 +1,7 @@
-# Local-github (All targets with dropdown config)
+# Local-github — full dropdowns for Wi‑Fi country + Keyboard
 
-This repo builds console-only images and lets you set **hostname, users, SSH policy, Wi‑Fi, IP config** via the **workflow dropdown**.
+This package updates the workflow so **Wi‑Fi country code** is a full ISO list dropdown, and **Keyboard layout** is a large dropdown (with a `custom` fallback).
 
-## Inputs (workflow_dispatch)
-- target: `pi | pc | arm64 | armhf | riscv64 | i386 | i860`
-- hostname, username, user_password, root_password
-- Wi‑Fi: ssid, password, country
-- timezone, keyboard
-- Static IP (eth0): ip, gateway, dns (semicolon-separated)
-- SSH: PermitRootLogin, PasswordAuthentication, PubkeyAuthentication
-
-Pi & PC builds apply these settings; generic/i860 steps are placeholders.
-
-> Security: Defaults are permissive for first boot. Switch to key-only SSH after provisioning.
+- Edit values in the **Actions → workflow_dispatch** form.
+- If you select `keyboard=custom`, set `keyboard_custom` to any valid XKB layout string (e.g. `us`, `gb`, `au`, `us,intl`, etc.).
+- Targets `pi` and `pc` are wired; generics/i860 are placeholders here.

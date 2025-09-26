@@ -1,4 +1,4 @@
-name: Build Local-github (All targets with config)
+name: Build Local-github (All targets with full dropdowns)
 
 on:
   workflow_dispatch:
@@ -28,20 +28,361 @@ on:
         description: "Root password"
         default: root
       wifi_ssid:
-        description: "Wi-Fi SSID"
+        description: "Wi‑Fi SSID"
         default: YourWiFi
       wifi_password:
-        description: "Wi-Fi password"
+        description: "Wi‑Fi password"
         default: YourPassword
       wifi_country:
-        description: "Wi-Fi country code"
+        type: choice
+        description: "Wi‑Fi country code (ISO 3166‑1 alpha‑2)"
+        options:
+          - AF
+          - AX
+          - AL
+          - DZ
+          - AS
+          - AD
+          - AO
+          - AI
+          - AQ
+          - AG
+          - AR
+          - AM
+          - AW
+          - AU
+          - AT
+          - AZ
+          - BS
+          - BH
+          - BD
+          - BB
+          - BY
+          - BE
+          - BZ
+          - BJ
+          - BM
+          - BT
+          - BO
+          - BQ
+          - BA
+          - BW
+          - BV
+          - BR
+          - IO
+          - BN
+          - BG
+          - BF
+          - BI
+          - CV
+          - KH
+          - CM
+          - CA
+          - KY
+          - CF
+          - TD
+          - CL
+          - CN
+          - CX
+          - CC
+          - CO
+          - KM
+          - CG
+          - CD
+          - CK
+          - CR
+          - CI
+          - HR
+          - CU
+          - CW
+          - CY
+          - CZ
+          - DK
+          - DJ
+          - DM
+          - DO
+          - EC
+          - EG
+          - SV
+          - GQ
+          - ER
+          - EE
+          - SZ
+          - ET
+          - FK
+          - FO
+          - FJ
+          - FI
+          - FR
+          - GF
+          - PF
+          - TF
+          - GA
+          - GM
+          - GE
+          - DE
+          - GH
+          - GI
+          - GR
+          - GL
+          - GD
+          - GP
+          - GU
+          - GT
+          - GG
+          - GN
+          - GW
+          - GY
+          - HT
+          - HM
+          - VA
+          - HN
+          - HK
+          - HU
+          - IS
+          - IN
+          - ID
+          - IR
+          - IQ
+          - IE
+          - IM
+          - IL
+          - IT
+          - JM
+          - JP
+          - JE
+          - JO
+          - KZ
+          - KE
+          - KI
+          - KP
+          - KR
+          - KW
+          - KG
+          - LA
+          - LV
+          - LB
+          - LS
+          - LR
+          - LY
+          - LI
+          - LT
+          - LU
+          - MO
+          - MG
+          - MW
+          - MY
+          - MV
+          - ML
+          - MT
+          - MH
+          - MQ
+          - MR
+          - MU
+          - YT
+          - MX
+          - FM
+          - MD
+          - MC
+          - MN
+          - ME
+          - MS
+          - MA
+          - MZ
+          - MM
+          - NA
+          - NR
+          - NP
+          - NL
+          - NC
+          - NZ
+          - NI
+          - NE
+          - NG
+          - NU
+          - NF
+          - MK
+          - MP
+          - NO
+          - OM
+          - PK
+          - PW
+          - PS
+          - PA
+          - PG
+          - PY
+          - PE
+          - PH
+          - PN
+          - PL
+          - PT
+          - PR
+          - QA
+          - RE
+          - RO
+          - RU
+          - RW
+          - BL
+          - SH
+          - KN
+          - LC
+          - MF
+          - PM
+          - VC
+          - WS
+          - SM
+          - ST
+          - SA
+          - SN
+          - RS
+          - SC
+          - SL
+          - SG
+          - SX
+          - SK
+          - SI
+          - SB
+          - SO
+          - ZA
+          - GS
+          - SS
+          - ES
+          - LK
+          - SD
+          - SR
+          - SJ
+          - SE
+          - CH
+          - SY
+          - TW
+          - TJ
+          - TZ
+          - TH
+          - TL
+          - TG
+          - TK
+          - TO
+          - TT
+          - TN
+          - TR
+          - TM
+          - TC
+          - TV
+          - UG
+          - UA
+          - AE
+          - GB
+          - US
+          - UM
+          - UY
+          - UZ
+          - VU
+          - VE
+          - VN
+          - VG
+          - VI
+          - WF
+          - EH
+          - YE
+          - ZM
+          - ZW
         default: AU
       timezone:
         description: "Timezone (e.g., Australia/Sydney)"
         default: Australia/Sydney
       keyboard:
-        description: "Keyboard layout (e.g., au)"
+        type: choice
+        description: "Keyboard layout (XKB)"
+        options:
+          - us
+          - gb
+          - au
+          - de
+          - fr
+          - es
+          - it
+          - jp
+          - ru
+          - br
+          - pt
+          - pl
+          - se
+          - no
+          - dk
+          - fi
+          - tr
+          - cz
+          - sk
+          - hu
+          - ro
+          - gr
+          - nl
+          - be
+          - ch
+          - ca
+          - mx
+          - ua
+          - il
+          - ar
+          - bg
+          - lt
+          - lv
+          - ee
+          - hr
+          - rs
+          - si
+          - mk
+          - ba
+          - is
+          - ie
+          - in
+          - pk
+          - bd
+          - th
+          - vn
+          - kr
+          - cn
+          - tw
+          - hk
+          - za
+          - ir
+          - sy
+          - kz
+          - kg
+          - uz
+          - tn
+          - ma
+          - dz
+          - eg
+          - sa
+          - ae
+          - qa
+          - kw
+          - om
+          - bh
+          - lb
+          - jo
+          - ps
+          - iq
+          - ye
+          - np
+          - lk
+          - ph
+          - my
+          - sg
+          - id
+          - au_mac
+          - us_intl
+          - colemak
+          - dvorak
+          - workman
+          - neo
+          - bepo
+          - custom
         default: au
+      keyboard_custom:
+        description: "If keyboard=custom, set layout here"
+        default: us
       static_ip:
         description: "Static IPv4 (eth0)"
         default: 192.168.1.50
@@ -75,53 +416,40 @@ jobs:
 
       - name: Prepare configs from inputs
         env:
-          HOSTNAME: ${{ github.event.inputs.hostname }}
-          USERNAME: ${{ github.event.inputs.username }}
-          USERPASS: ${{ github.event.inputs.user_password }}
-          ROOTPASS: ${{ github.event.inputs.root_password }}
-          WIFI_SSID: ${{ github.event.inputs.wifi_ssid }}
-          WIFI_PASSWORD: ${{ github.event.inputs.wifi_password }}
-          WIFI_COUNTRY: ${{ github.event.inputs.wifi_country }}
-          TIMEZONE: ${{ github.event.inputs.timezone }}
-          KEYBOARD: ${{ github.event.inputs.keyboard }}
-          STATIC_IP: ${{ github.event.inputs.static_ip }}
-          GATEWAY: ${{ github.event.inputs.gateway }}
-          DNS: ${{ github.event.inputs.dns }}
-          PERMIT_ROOT_LOGIN: ${{ github.event.inputs.permit_root_login }}
-          PASSWORD_AUTH: ${{ github.event.inputs.password_auth }}
-          PUBKEY_AUTH: ${{ github.event.inputs.pubkey_auth }}
+          HOSTNAME: ${ github.event.inputs.hostname }
+          USERNAME: ${ github.event.inputs.username }
+          USERPASS: ${ github.event.inputs.user_password }
+          ROOTPASS: ${ github.event.inputs.root_password }
+          WIFI_SSID: ${ github.event.inputs.wifi_ssid }
+          WIFI_PASSWORD: ${ github.event.inputs.wifi_password }
+          WIFI_COUNTRY: ${ github.event.inputs.wifi_country }
+          TIMEZONE: ${ github.event.inputs.timezone }
+          KEYBOARD: ${ github.event.inputs.keyboard }
+          KEYBOARD_CUSTOM: ${ github.event.inputs.keyboard_custom }
+          STATIC_IP: ${ github.event.inputs.static_ip }
+          GATEWAY: ${ github.event.inputs.gateway }
+          DNS: ${ github.event.inputs.dns }
+          PERMIT_ROOT_LOGIN: ${ github.event.inputs.permit_root_login }
+          PASSWORD_AUTH: ${ github.event.inputs.password_auth }
+          PUBKEY_AUTH: ${ github.event.inputs.pubkey_auth }
         run: |
           set -e
-          echo "::group::Stage shared payload"
           mkdir -p targets/live-build/config/includes.chroot/tmp/payload
           rsync -a shared/ targets/live-build/config/includes.chroot/tmp/payload/
           rsync -a shared/ targets/pi-gen/stage4/05-chip-base/files/
-          echo "::endgroup::"
 
-          echo "::group::Substitute placeholders"
-          find . -type f \
-            \( -path './shared/*' -o -path './targets/*' \) \
-            -exec sed -i \
-              -e "s/__HOSTNAME__/${HOSTNAME}/g" \
-              -e "s/__USERNAME__/${USERNAME}/g" \
-              -e "s/__USERPASS__/${USERPASS}/g" \
-              -e "s/__ROOTPASS__/${ROOTPASS}/g" \
-              -e "s/__WIFI_SSID__/${WIFI_SSID}/g" \
-              -e "s/__WIFI_PASSWORD__/${WIFI_PASSWORD}/g" \
-              -e "s/__WIFI_COUNTRY__/${WIFI_COUNTRY}/g" \
-              -e "s#__TIMEZONE__#${TIMEZONE}#g" \
-              -e "s/__KEYBOARD__/${KEYBOARD}/g" \
-              -e "s/__STATIC_IP__/${STATIC_IP}/g" \
-              -e "s/__GATEWAY__/${GATEWAY}/g" \
-              -e "s/__DNS__/${DNS}/g" \
-              -e "s/__PERMIT_ROOT_LOGIN__/${PERMIT_ROOT_LOGIN}/g" \
-              -e "s/__PASSWORD_AUTH__/${PASSWORD_AUTH}/g" \
-              -e "s/__PUBKEY_AUTH__/${PUBKEY_AUTH}/g" \
-              -e "s/__USERNAME__COLON__/${USERNAME}:/g" \
-              {} +
-          echo "::endgroup::"
+          # If keyboard=custom, override
+          if [ "${ github.event.inputs.keyboard }" = "custom" ]; then
+            KEYBOARD_VAL="${ github.event.inputs.keyboard_custom }"
+          else
+            KEYBOARD_VAL="${ github.event.inputs.keyboard }"
+          fi
+
+          # Substitute placeholders in templates
+          find . -type f \( -path './shared/*' -o -path './targets/*' \) -exec sed -i             -e "s/__HOSTNAME__/${ github.event.inputs.hostname }/g"             -e "s/__USERNAME__/${ github.event.inputs.username }/g"             -e "s/__USERPASS__/${ github.event.inputs.user_password }/g"             -e "s/__ROOTPASS__/${ github.event.inputs.root_password }/g"             -e "s/__WIFI_SSID__/${ github.event.inputs.wifi_ssid }/g"             -e "s/__WIFI_PASSWORD__/${ github.event.inputs.wifi_password }/g"             -e "s/__WIFI_COUNTRY__/${ github.event.inputs.wifi_country }/g"             -e "s#__TIMEZONE__#${ github.event.inputs.timezone }#g"             -e "s/__KEYBOARD__/${ github.event.inputs.keyboard }/g"             -e "s/__KEYBOARD_VAL__/${ github.event.inputs.keyboard_custom }/g"             -e "s/__STATIC_IP__/${ github.event.inputs.static_ip }/g"             -e "s/__GATEWAY__/${ github.event.inputs.gateway }/g"             -e "s/__DNS__/${ github.event.inputs.dns }/g"             -e "s/__PERMIT_ROOT_LOGIN__/${ github.event.inputs.permit_root_login }/g"             -e "s/__PASSWORD_AUTH__/${ github.event.inputs.password_auth }/g"             -e "s/__PUBKEY_AUTH__/${ github.event.inputs.pubkey_auth }/g"             -e "s/__USERNAME__COLON__/${ github.event.inputs.username }:/g"             {} +
+
       - name: Build Raspberry Pi (pi)
-        if: ${{ github.event.inputs.target == 'pi' }}
+        if: ${ github.event.inputs.target == 'pi' }
         uses: usimd/pi-gen-action@v1
         with:
           release: bookworm
@@ -131,37 +459,32 @@ jobs:
           deploy_compression: xz
           deploy_compression_level: 9
           deploy_zip: true
+
       - name: Upload Pi artifact
-        if: ${{ github.event.inputs.target == 'pi' }}
+        if: ${ github.event.inputs.target == 'pi' }
         uses: actions/upload-artifact@v4
         with:
           name: Local-github-pi-arm64
           path: deploy/*
 
       - name: Build PC ISO (live-build)
-        if: ${{ github.event.inputs.target == 'pc' }}
+        if: ${ github.event.inputs.target == 'pc' }
         run: |
           sudo apt-get update
           sudo apt-get install -y live-build debootstrap syslinux isolinux
           cd targets/live-build
           lb config --architecture amd64 --distribution bookworm --mode debian             --binary-images iso-hybrid --debian-installer live --apt-recommends false
           sudo lb build
+
       - name: Upload PC artifact
-        if: ${{ github.event.inputs.target == 'pc' }}
+        if: ${ github.event.inputs.target == 'pc' }
         uses: actions/upload-artifact@v4
         with:
           name: Local-github-pc-amd64
           path: targets/live-build/live-image-amd64.hybrid.iso
 
-      - name: Build generic image (arm64/armhf/riscv64/i386)
-        if: ${{ contains('arm64,armhf,riscv64,i386', github.event.inputs.target) }}
+      - name: Generic/i860 placeholders
+        if: ${ github.event.inputs.target != 'pi' && github.event.inputs.target != 'pc' }
         run: |
-          echo "Generic targets currently not parameterized via placeholders."
-          echo "You can adapt targets/generic/build-generic.sh similarly if needed."
-          exit 0
-
-      - name: i860 placeholder
-        if: ${{ github.event.inputs.target == 'i860' }}
-        run: |
-          echo "i860 placeholder build."
+          echo "Generic or i860 builds are placeholders in this package."
           exit 0
