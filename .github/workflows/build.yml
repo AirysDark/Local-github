@@ -214,13 +214,13 @@ jobs:
 
           # post-boot adjustments
           cat > "$BASE/00-run.sh" <<'EOS'
-#!/bin/bash
-set -e
-systemctl enable ssh || true
-if [ -d /etc/dhcpcd.conf.d ]; then
-  grep -q '^include /etc/dhcpcd.conf.d' /etc/dhcpcd.conf || echo 'include /etc/dhcpcd.conf.d/*.conf' >> /etc/dhcpcd.conf
-fi
-EOS
+            #!/bin/bash
+            set -e
+            systemctl enable ssh || true
+            if [ -d /etc/dhcpcd.conf.d ]; then
+              grep -q '^include /etc/dhcpcd.conf.d' /etc/dhcpcd.conf || echo 'include /etc/dhcpcd.conf.d/*.conf' >> /etc/dhcpcd.conf
+            fi
+            EOS
           chmod +x "$BASE/00-run.sh"
 
       - name: Build Raspberry Pi image
