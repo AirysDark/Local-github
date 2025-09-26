@@ -2,39 +2,47 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Local-github Config (Safe, Embedded Lists)</title>
+<title>Local-github Builder (dynamic from config/options.json)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
   :root { --bg:#0b0f14; --card:#121821; --muted:#a6b3c2; --text:#e8eef6; --accent:#5cc8ff; }
+  * { box-sizing: border-box; }
   body { margin:0; font-family:system-ui,Segoe UI,Roboto,Arial; background:var(--bg); color:var(--text); }
   .wrap { max-width:1100px; margin:24px auto; padding:0 16px; }
   .row { display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
   .card { background:var(--card); border:1px solid #1f2733; border-radius:12px; padding:16px; }
+  h1,h2,h3 { margin: 0 0 10px 0; }
   label { font-size:12px; color:var(--muted); display:block; margin-top:8px; }
-  input, select, textarea, button { width:100%; box-sizing:border-box; padding:10px; border-radius:8px; border:1px solid #2a3342; background:#0e141c; color:#e8eef6; }
+  input, select, textarea, button { width:100%; padding:10px; border-radius:8px; border:1px solid #2a3342; background:#0e141c; color:var(--text); }
   small { color:var(--muted); }
   button { margin-top:12px; background:var(--accent); color:#001019; border:none; font-weight:600; cursor:pointer; }
+  code { background:#0e141c; padding:2px 6px; border-radius:6px; border:1px solid #2a3342; }
   .out { white-space:pre-wrap; background:#0e141c; padding:12px; border-radius:8px; border:1px solid #2a3342; min-height:80px; }
   .two { display:grid; grid-template-columns: 1fr 1fr; gap:8px; }
+  .sep { margin: 16px 0; border-top:1px solid #1f2733; }
 </style>
 </head>
 <body>
 <div class="wrap">
 
+  <h1>Local-github Builder</h1>
+
   <div class="row">
     <div class="card">
+      <h3>Repository</h3>
       <label>Owner</label>
-      <input id="owner" placeholder="e.g. AirysDark">
+      <input id="owner" placeholder="e.g. chip">
       <label>Repo</label>
       <input id="repo" placeholder="e.g. Local-github">
       <label>Workflow file path</label>
       <input id="workflow" value=".github/workflows/build.yml">
       <label>Ref/branch</label>
       <input id="ref" value="main">
-      <small>This page never sends the request. It only prints the JSON + a curl command you can run locally.</small>
+      <small>This page never sends the request. It only prints the JSON + a curl command you run in your terminal.</small>
     </div>
 
     <div class="card">
+      <h3>Build Target</h3>
       <div class="two">
         <div>
           <label>Build type</label>
@@ -53,36 +61,51 @@
       </div>
       <label>target_bits</label>
       <input id="target_bits" value="auto" readonly>
-      <small>Computed from Build type + CPU bitrate; shows "auto" here.</small>
+      <small>Computed from Build type + CPU bitrate; the visible field stays “auto”.</small>
     </div>
   </div>
 
   <div class="row" style="margin-top:16px">
     <div class="card">
+      <h3>User</h3>
+      <label>Preset user</label>
+      <select id="user_preset"></select>
       <label>Console username</label>
       <input id="user_name" placeholder="e.g. AirysDark">
       <label>Console password</label>
       <input id="user_password" type="password" placeholder="e.g. Zombie1986X2">
 
-      <label style="margin-top:14px;">Wi‑Fi SSID</label>
+      <div class="sep"></div>
+      <h3>Wi-Fi</h3>
+      <label>Preset Wi-Fi</label>
+      <select id="wifi_preset"></select>
+      <label>Wi-Fi SSID</label>
       <input id="wifi_ssid" placeholder="e.g. Raspbain">
-      <label>Wi‑Fi password</label>
+      <label>Wi-Fi password</label>
       <input id="wifi_password" type="password" placeholder="e.g. YourWiFiPassword">
     </div>
 
     <div class="card">
-      <label>PermitRootLogin</label>
+      <h3>SSH</h3>
+      <label>Preset SSH</label>
+      <select id="ssh_preset"></select>
+      <small>
+        <div><code>PermitRootLogin</code>: <code>yes</code>=allow root; <code>prohibit-password</code>=keys only; <code>no</code>=disable</div>
+      </small>
+      <label>PermitRootLogin (override)</label>
       <input id="ssh_prl" placeholder="e.g. yes">
-      <small><code>yes</code>=allow root; <code>prohibit-password</code>=keys only; <code>no</code>=disable</small>
-      <label>PasswordAuthentication</label>
+      <label>PasswordAuthentication (override)</label>
       <input id="ssh_pa" placeholder="e.g. yes">
-      <label>PubkeyAuthentication</label>
+      <label>PubkeyAuthentication (override)</label>
       <input id="ssh_pk" placeholder="e.g. yes">
     </div>
   </div>
 
   <div class="row" style="margin-top:16px">
     <div class="card">
+      <h3>Networking</h3>
+      <label>Preset static IPv4</label>
+      <select id="net_preset"></select>
       <div class="two">
         <div>
           <label>Static IPv4</label>
@@ -98,13 +121,14 @@
     </div>
 
     <div class="card">
-      <label>Wi‑Fi country</label>
+      <h3>Region & Locale</h3>
+      <label>Wi-Fi country</label>
       <select id="wifi_country"></select>
       <label>Timezone</label>
       <select id="timezone"></select>
       <label>Keyboard layout</label>
       <select id="keyboard" onchange="toggleKeyboardCustom()"></select>
-      <label>Custom layout (only if &quot;custom&quot;)</label>
+      <label>Custom layout (only if “custom”)</label>
       <input id="keyboard_custom" placeholder="e.g. us,intl" style="display:none">
     </div>
   </div>
@@ -129,28 +153,13 @@
 </div>
 
 <script>
-const COUNTRIES = ["AD", "AE", "AF", "AG", "AI", "AL", "AM", "AO", "AQ", "AR", "AS", "AT", "AU", "AW", "AX", "AZ", "BA", "BB", "BD", "BE", "BF", "BG", "BH", "BI", "BJ", "BL", "BM", "BN", "BO", "BQ", "BR", "BS", "BT", "BV", "BW", "BY", "BZ", "CA", "CC", "CD", "CF", "CG", "CH", "CI", "CK", "CL", "CM", "CN", "CO", "CR", "CU", "CV", "CW", "CX", "CY", "CZ", "DE", "DJ", "DK", "DM", "DO", "DZ", "EC", "EE", "EG", "EH", "ER", "ES", "ET", "FI", "FJ", "FK", "FM", "FO", "FR", "GA", "GB", "GD", "GE", "GF", "GG", "GH", "GI", "GL", "GM", "GN", "GP", "GQ", "GR", "GS", "GT", "GU", "GW", "GY", "HK", "HM", "HN", "HR", "HT", "HU", "ID", "IE", "IL", "IM", "IN", "IO", "IQ", "IR", "IS", "IT", "JE", "JM", "JO", "JP", "KE", "KG", "KH", "KI", "KM", "KN", "KP", "KR", "KW", "KY", "KZ", "LA", "LB", "LC", "LI", "LK", "LR", "LS", "LT", "LU", "LV", "LY", "MA", "MC", "MD", "ME", "MF", "MG", "MH", "MK", "ML", "MM", "MN", "MO", "MP", "MQ", "MR", "MS", "MT", "MU", "MV", "MW", "MX", "MY", "MZ", "NA", "NC", "NE", "NF", "NG", "NI", "NL", "NO", "NP", "NR", "NU", "NZ", "OM", "PA", "PE", "PF", "PG", "PH", "PK", "PL", "PM", "PN", "PR", "PS", "PT", "PW", "PY", "QA", "RE", "RO", "RS", "RU", "RW", "SA", "SB", "SC", "SD", "SE", "SG", "SH", "SI", "SJ", "SK", "SL", "SM", "SN", "SO", "SR", "SS", "ST", "SV", "SX", "SY", "SZ", "TC", "TD", "TF", "TG", "TH", "TJ", "TK", "TL", "TM", "TN", "TO", "TR", "TT", "TV", "TW", "TZ", "UA", "UG", "UM", "US", "UY", "UZ", "VA", "VC", "VE", "VG", "VI", "VN", "VU", "WF", "WS", "YE", "YT", "ZA", "ZM", "ZW"];
-const TIMEZONES = ["UTC", "Pacific/Midway", "Pacific/Honolulu", "Pacific/Tahiti", "Pacific/Marquesas", "Pacific/Gambier", "America/Adak", "America/Anchorage", "America/Juneau", "America/Sitka", "America/Yakutat", "America/Los_Angeles", "America/Phoenix", "America/Denver", "America/Chicago", "America/New_York", "America/Indiana/Indianapolis", "America/Detroit", "America/Toronto", "America/Vancouver", "America/Mexico_City", "America/Monterrey", "America/Guatemala", "America/Costa_Rica", "America/Panama", "America/Bogota", "America/Lima", "America/Caracas", "America/Halifax", "America/St_Johns", "America/Sao_Paulo", "America/Argentina/Buenos_Aires", "America/Santiago", "America/La_Paz", "America/Montevideo", "America/Asuncion", "America/Guyana", "America/Paramaribo", "Atlantic/Azores", "Atlantic/Cape_Verde", "Atlantic/Reykjavik", "Atlantic/Bermuda", "Atlantic/Canary", "Europe/London", "Europe/Dublin", "Europe/Lisbon", "Europe/Madrid", "Europe/Paris", "Europe/Brussels", "Europe/Amsterdam", "Europe/Berlin", "Europe/Stockholm", "Europe/Rome", "Europe/Vienna", "Europe/Prague", "Europe/Warsaw", "Europe/Budapest", "Europe/Copenhagen", "Europe/Zurich", "Europe/Monaco", "Europe/Luxembourg", "Europe/Oslo", "Europe/Helsinki", "Europe/Athens", "Europe/Sofia", "Europe/Bucharest", "Europe/Belgrade", "Europe/Kiev", "Europe/Kyiv", "Europe/Chisinau", "Europe/Riga", "Europe/Vilnius", "Europe/Tallinn", "Europe/Istanbul", "Europe/Moscow", "Europe/Samara", "Europe/Kaliningrad", "Africa/Casablanca", "Africa/Algiers", "Africa/Tunis", "Africa/Cairo", "Africa/Tripoli", "Africa/Lagos", "Africa/Nairobi", "Africa/Johannesburg", "Africa/Harare", "Africa/Maputo", "Africa/Addis_Ababa", "Africa/Kampala", "Africa/Accra", "Africa/Abidjan", "Asia/Jerusalem", "Asia/Amman", "Asia/Beirut", "Asia/Baghdad", "Asia/Tehran", "Asia/Dubai", "Asia/Muscat", "Asia/Kabul", "Asia/Karachi", "Asia/Kolkata", "Asia/Kathmandu", "Asia/Dhaka", "Asia/Yangon", "Asia/Bangkok", "Asia/Singapore", "Asia/Kuala_Lumpur", "Asia/Manila", "Asia/Hong_Kong", "Asia/Taipei", "Asia/Shanghai", "Asia/Macau", "Asia/Ulaanbaatar", "Asia/Tokyo", "Asia/Seoul", "Australia/Perth", "Australia/Eucla", "Australia/Darwin", "Australia/Adelaide", "Australia/Brisbane", "Australia/Sydney", "Australia/Melbourne", "Australia/Hobart", "Australia/Lord_Howe", "Pacific/Port_Moresby", "Pacific/Guadalcanal", "Pacific/Noumea", "Pacific/Auckland", "Pacific/Chatham", "Pacific/Fiji", "Pacific/Tongatapu", "Pacific/Apia", "Indian/Maldives", "Indian/Mauritius", "Indian/Reunion", "Indian/Mahe", "Indian/Chagos", "Indian/Christmas", "Indian/Cocos"];
-const KEYBOARDS = ["us", "us(intl)", "us(altgr-intl)", "us(colemak)", "us(colemak-dh)", "us(dvorak)", "us(workman)", "us(mac)", "au", "gb", "ie", "ca", "ca(fr)", "latam", "br", "es", "pt", "pt(mac)", "fr", "fr(azerty)", "ch", "be", "it", "de", "de(nodeadkeys)", "pl", "cz", "sk", "hu", "ro", "bg", "ru", "ru(phonetic)", "ua", "srp", "hr", "si", "ba", "mk", "al", "el", "tr", "tr(f)", "ku", "se", "no", "dk", "fi", "is", "nl", "lu", "li", "ee", "lv", "lt", "lt(ibm)", "gr", "mt", "md", "il", "ara", "ir", "pk", "in", "bd", "lk", "np", "th", "lo", "km", "vi", "my", "cn", "tw", "hk", "jp", "kr", "za", "ng", "gh", "tz", "ke", "ma", "tn", "dz", "eg", "custom"];
-
-function fillSelect(id, arr, placeholder){
-  const el = document.getElementById(id);
-  el.innerHTML = "";
-  const o0 = document.createElement('option');
-  o0.value = ""; o0.textContent = placeholder;
-  el.appendChild(o0);
-  arr.forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v; el.appendChild(o); });
+function targetBitsComputed() {
+  return document.getElementById('build_type').value + ' ' + document.getElementById('cpu_bitrate').value;
 }
-
 function toggleKeyboardCustom(){
   const kb = document.getElementById('keyboard').value;
   document.getElementById('keyboard_custom').style.display = (kb === 'custom') ? 'block' : 'none';
 }
-
-function targetBitsComputed() {
-  return document.getElementById('build_type').value + ' ' + document.getElementById('cpu_bitrate').value;
-}
-
 function gatherInputs() {
   return {
     target_bits: targetBitsComputed(),
@@ -170,7 +179,6 @@ function gatherInputs() {
     keyboard_custom: document.getElementById('keyboard_custom').value
   };
 }
-
 function showPayload() {
   const owner = (document.getElementById('owner').value || '').trim();
   const repo  = (document.getElementById('repo').value  || '').trim();
@@ -191,16 +199,126 @@ function showPayload() {
   document.getElementById('jsonOut').textContent = JSON.stringify(body, null, 2);
   document.getElementById('repoOut').textContent = JSON.stringify({ url, owner, repo, workflow: wf, ref }, null, 2);
 
-  const authHeader = token ? `  -H "Authorization: Bearer ${token}" \\` : '  # -H "Authorization: Bearer <TOKEN>" \\' ;
+  const authHeader = token ? `  -H "Authorization: Bearer ${token}" \\` : '  # -H "Authorization: Bearer <TOKEN>" \\';
   const curl = [
     'curl -s -X POST \\',
     '  -H "Accept: application/vnd.github+json" \\',
     '  -H "X-GitHub-Api-Version: 2022-11-28" \\',
     authHeader,
     `  https://api.github.com/repos/${owner}/${repo}/actions/workflows/${encodeURIComponent(wf)}/dispatches \\`,
-    "  -d '" + JSON.stringify(body).replace(/'/g, "'"'"'") + "'"
+    "  -d '" + JSON.stringify(body).replace(/'/g, "'\"'\"'") + "'"
   ].join("\n");
   document.getElementById('curlOut').textContent = curl;
+}
+
+function fillSelect(id, arr, labelfn, valuefn, placeholder) {
+  const sel = document.getElementById(id);
+  sel.innerHTML = "";
+  const opt0 = document.createElement('option');
+  opt0.value = ""; opt0.textContent = placeholder || "(select)";
+  sel.appendChild(opt0);
+  arr.forEach((it, idx) => {
+    const o = document.createElement('option');
+    const label = labelfn ? labelfn(it, idx) : String(it);
+    const value = valuefn ? valuefn(it, idx) : String(it);
+    o.value = value; o.textContent = label;
+    o.dataset.raw = JSON.stringify(it);
+    sel.appendChild(o);
+  });
+}
+
+function applyPreset(selId, setter){
+  const sel = document.getElementById(selId);
+  const opt = sel.options[sel.selectedIndex];
+  if (!opt || !opt.dataset.raw) return;
+  try {
+    const obj = JSON.parse(opt.dataset.raw);
+    setter(obj);
+  } catch(e) {}
+}
+
+async function loadOptions(){
+  // Looks for docs/config/options.json (same folder structure when deployed via Pages)
+  const urls = ['config/options.json', './config/options.json', '/config/options.json'];
+  let js = null;
+  for (const u of urls) {
+    try {
+      const r = await fetch(u, {cache:'no-store'});
+      if (r.ok) { js = await r.json(); break; }
+    } catch (e) {}
+  }
+  if (!js) {
+    document.getElementById('jsonOut').textContent = 'Could not load config/options.json';
+    return;
+  }
+
+  // Region & locale (support both alias keys)
+  const countries = js.wifi_countries || js.country || [];
+  const timezones = js.timezones || js.tz || [];
+  const keyboards = js.keyboards || js.kbd || [];
+
+  fillSelect('wifi_country', countries, (v)=>v, (v)=>v, '(Wi-Fi country)');
+  fillSelect('timezone', timezones, (v)=>v, (v)=>v, '(Timezone)');
+  fillSelect('keyboard', keyboards, (v)=>v, (v)=>v, '(Keyboard)');
+
+  // Presets (optional in JSON)
+  fillSelect('user_preset', js.users || [], (u)=>u.name, (u)=>u.name, '(no user preset)');
+  fillSelect('wifi_preset', js.wifi || [], (w)=>w.ssid, (w)=>w.ssid, '(no Wi-Fi preset)');
+  fillSelect('ssh_preset',  js.ssh  || [], (s)=> (s.label || `${s.permit_root_login}:${s.password_auth}:${s.pubkey_auth}`), (s)=> (s.label || `${s.permit_root_login}:${s.password_auth}:${s.pubkey_auth}`), '(no SSH preset)');
+  fillSelect('net_preset',  js.net  || js.net_ipv4 || [], (n)=> `${n.ip} → ${n.gateway} (${n.dns})`, (n)=> n.ip, '(no IP preset)');
+
+  // Auto-apply first preset if present
+  if ((js.users||[]).length) {
+    document.getElementById('user_preset').selectedIndex = 1;
+    applyPreset('user_preset', (u)=>{
+      document.getElementById('user_name').value = u.name || '';
+      document.getElementById('user_password').value = u.password || '';
+    });
+  }
+  if ((js.wifi||[]).length) {
+    document.getElementById('wifi_preset').selectedIndex = 1;
+    applyPreset('wifi_preset', (w)=>{
+      document.getElementById('wifi_ssid').value = w.ssid || '';
+      document.getElementById('wifi_password').value = w.password || '';
+    });
+  }
+  if ((js.ssh||[]).length) {
+    document.getElementById('ssh_preset').selectedIndex = 1;
+    applyPreset('ssh_preset', (s)=>{
+      document.getElementById('ssh_prl').value = s.permit_root_login || '';
+      document.getElementById('ssh_pa').value  = s.password_auth || '';
+      document.getElementById('ssh_pk').value  = s.pubkey_auth || '';
+    });
+  }
+  const nets = js.net || js.net_ipv4 || [];
+  if (nets.length) {
+    document.getElementById('net_preset').selectedIndex = 1;
+    applyPreset('net_preset', (n)=>{
+      document.getElementById('static_ip').value = n.ip || '';
+      document.getElementById('gateway').value   = n.gateway || '';
+      document.getElementById('dns').value       = n.dns || '';
+    });
+  }
+
+  // Change handlers — picking a preset fills the fields but you can still edit
+  document.getElementById('user_preset').addEventListener('change', ()=>applyPreset('user_preset',(u)=>{
+    document.getElementById('user_name').value = u.name || '';
+    document.getElementById('user_password').value = u.password || '';
+  }));
+  document.getElementById('wifi_preset').addEventListener('change', ()=>applyPreset('wifi_preset',(w)=>{
+    document.getElementById('wifi_ssid').value = w.ssid || '';
+    document.getElementById('wifi_password').value = w.password || '';
+  }));
+  document.getElementById('ssh_preset').addEventListener('change', ()=>applyPreset('ssh_preset',(s)=>{
+    document.getElementById('ssh_prl').value = s.permit_root_login || '';
+    document.getElementById('ssh_pa').value  = s.password_auth || '';
+    document.getElementById('ssh_pk').value  = s.pubkey_auth || '';
+  }));
+  document.getElementById('net_preset').addEventListener('change', ()=>applyPreset('net_preset',(n)=>{
+    document.getElementById('static_ip').value = n.ip || '';
+    document.getElementById('gateway').value   = n.gateway || '';
+    document.getElementById('dns').value       = n.dns || '';
+  }));
 }
 
 document.getElementById('buildBtn').addEventListener('click', function(e){
@@ -209,9 +327,7 @@ document.getElementById('buildBtn').addEventListener('click', function(e){
   showPayload();
 });
 
-fillSelect('wifi_country', COUNTRIES, '(Wi‑Fi country)');
-fillSelect('timezone', TIMEZONES, '(Timezone)');
-fillSelect('keyboard', KEYBOARDS, '(Keyboard)');
+loadOptions();
 </script>
 </body>
 </html>
