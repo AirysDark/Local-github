@@ -1,429 +1,459 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Local-github Builder</title>
-<style>
-  :root{
-    --bg:#0b1118; --panel:#0f1622; --panel-2:#121c2a; --ink:#e6eef8; --muted:#97a8be;
-    --brand:#55c2ff; --ok:#67e8a6; --warn:#ffd166; --line:#1a2636; --chip:#0d2136;
-    --ring:0 0 0 2px rgba(85,194,255,.25),0 0 0 6px rgba(85,194,255,.08);
-  }
-  *{box-sizing:border-box}
-  body{
-    margin:0; font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Inter,Arial;
-    color:var(--ink);
-    background:radial-gradient(1200px 700px at 80% -10%,#0e1a2b,transparent),
-               radial-gradient(900px 500px at -10% 120%,#0e2338,transparent),
-               var(--bg);
-  }
-  .wrap{max-width:1100px;margin:28px auto;padding:0 18px}
-  .hero{
-    display:flex;align-items:center;justify-content:space-between;gap:16px;
-    background:linear-gradient(180deg,rgba(85,194,255,.08),transparent),var(--panel);
-    border:1px solid var(--line);border-radius:16px;padding:18px;
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 10px 30px rgba(0,0,0,.25);
-  }
-  .title{display:flex;align-items:center;gap:12px}
-  .logo{
-    width:40px;height:40px;border-radius:12px;display:grid;place-items:center;
-    background:conic-gradient(from 210deg,#1a6ea7,#55c2ff,#1a6ea7);
-    box-shadow:0 6px 18px rgba(85,194,255,.25),inset 0 0 10px rgba(255,255,255,.08);
-  }
-  .title h1{margin:0;font-weight:700;letter-spacing:.2px}
-  .sub{margin:4px 0 0 0;color:var(--muted);font-size:13px}
-  .grid{display:grid;gap:16px;grid-template-columns:1fr 1fr}
-  @media (max-width:920px){.grid{grid-template-columns:1fr}}
-  .card{
-    background:linear-gradient(180deg,rgba(255,255,255,.02),transparent),var(--panel);
-    border:1px solid var(--line);border-radius:16px;padding:16px;
-    box-shadow:0 10px 30px rgba(0,0,0,.25);
-  }
-  .card h3{margin:0 0 6px 0;font-size:16px;letter-spacing:.2px}
-  .hint{color:var(--muted);font-size:12px;margin-top:6px}
-  label{display:block;font-size:12px;color:var(--muted);margin:10px 0 6px}
-  input,select{
-    width:100%;background:var(--panel-2);color:var(--ink);
-    border:1px solid var(--line);border-radius:10px;padding:10px 12px;outline:none;
-    transition:.2s border-color,.2s box-shadow;
-  }
-  input:focus,select:focus{border-color:var(--brand);box-shadow:var(--ring)}
-  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  @media (max-width:620px){.row2{grid-template-columns:1fr}}
-  .btn{
-    display:inline-flex;align-items:center;gap:10px;cursor:pointer;
-    background:linear-gradient(180deg,#62d1ff,#55c2ff);color:#042032;border:0;
-    border-radius:12px;padding:12px 14px;font-weight:700;
-    box-shadow:0 10px 26px rgba(85,194,255,.35),inset 0 1px 0 rgba(255,255,255,.25);
-  }
-  .btn:hover{filter:brightness(1.05)}
-  .btn:active{transform:translateY(1px)}
-  .btn.secondary{background:linear-gradient(180deg,#67e8a6,#45d089);color:#072316}
-  .out{
-    background:var(--panel-2);border:1px solid var(--line);border-radius:12px;
-    padding:12px;white-space:pre-wrap;font-family:ui-monospace,Menlo,Consolas,monospace;min-height:90px;
-  }
-  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-  .chip{font-size:12px;padding:6px 8px;border-radius:999px;background:var(--chip);border:1px solid var(--line);color:var(--muted)}
-  .footer-note{color:var(--muted);font-size:12px;margin-top:6px}
-  .status{font-size:13px;color:var(--muted);margin-top:8px}
-</style>
+  <meta charset="utf-8" />
+  <title>Local-github Builder</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Tailwind for a nicer UI -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .card { @apply bg-white/80 backdrop-blur rounded-2xl shadow p-6 border border-gray-200; }
+    .grid2 { @apply grid grid-cols-1 md:grid-cols-2 gap-4; }
+    .label { @apply block text-sm font-medium text-gray-700 mb-1; }
+    .input, select, textarea { @apply w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500; }
+    .hint { @apply text-xs text-gray-500 mt-1; }
+    .btn { @apply inline-flex items-center justify-center rounded-xl px-4 py-2 font-medium bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50; }
+    .btn-outline { @apply inline-flex items-center justify-center rounded-xl px-4 py-2 font-medium border border-gray-300 bg-white hover:bg-gray-50; }
+    .section-title { @apply text-lg font-semibold mb-4; }
+    .badge { @apply inline-block text-xs font-semibold bg-gray-100 text-gray-700 px-2 py-1 rounded; }
+    .hr { @apply my-6 border-t border-gray-200; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace; }
+  </style>
 </head>
-<body>
-<div class="wrap">
-  <div class="hero">
-    <div class="title">
-      <div class="logo" aria-hidden="true">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="#001420"><path d="M13 3a9 9 0 1 0 8.485 6H19a7 7 0 1 1-2.05-4.95L15 6h6V0l-2.293 2.293A8.962 8.962 0 0 0 13 3z"/></svg>
-      </div>
-      <div>
-        <h1>Local-github Builder</h1>
-        <div class="sub">Build & download your image directly from this page (token stays in-memory).</div>
-      </div>
-    </div>
-    <div class="chips">
-      <span class="chip">Raspberry Pi</span>
-      <span class="chip">Headless</span>
-      <span class="chip">Pages → Actions</span>
-    </div>
-  </div>
+<body class="bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen text-slate-900">
+  <div class="max-w-5xl mx-auto p-6 md:p-10">
+    <header class="mb-8">
+      <h1 class="text-3xl font-bold">Local-github Builder</h1>
+      <p class="text-gray-600">Load presets from <span class="badge">/config/*.json</span>, fill options, and build your inputs payload.</p>
+    </header>
 
-  <!-- repo + token -->
-  <div class="card" style="margin-top:16px">
-    <h3>Repository & token</h3>
-    <div class="row2">
-      <div>
-        <label>Owner</label>
-        <input id="owner" placeholder="e.g. AirysDark">
-      </div>
-      <div>
-        <label>Repo</label>
-        <input id="repo" placeholder="e.g. Local-github">
+    <!-- Status -->
+    <div id="status" class="card mb-6">
+      <div class="flex items-center gap-3">
+        <div class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" id="statusDot"></div>
+        <div class="text-sm" id="statusText">Loading presets?</div>
       </div>
     </div>
-    <div class="row2">
-      <div>
-        <label>Workflow path (in repo)</label>
-        <input id="workflow_path" value=".github/workflows/build.yml">
-      </div>
-      <div>
-        <label>Branch ref</label>
-        <input id="branch_ref" value="main">
-      </div>
-    </div>
-    <label>Personal Access Token (fine-grained; Actions: write, Contents: read)</label>
-    <input id="token" type="password" placeholder="ghp_… (NOT stored)">
-    <div class="footer-note">Used only from your browser to api.github.com; not persisted.</div>
-  </div>
 
-  <!-- Build + User -->
-  <div class="grid" style="margin-top:16px">
-    <div class="card">
-      <h3>Build target</h3>
-      <div class="row2">
+    <!-- Build section -->
+    <div class="card mb-6">
+      <div class="section-title">Build Target</div>
+      <div class="grid2">
         <div>
-          <label>Build type</label>
+          <label class="label" for="build_type">Build type</label>
           <select id="build_type"></select>
+          <div class="hint">Choose the platform (Pi, Jetson, x86, Android, etc.).</div>
         </div>
         <div>
-          <label>CPU bitrate</label>
+          <label class="label" for="cpu_bitrate">CPU bit-rate</label>
           <select id="cpu_bitrate"></select>
+          <div class="hint">32bit or 64bit. For Pi + bitrate we also compute <span class="badge">target_bits</span> for the workflow.</div>
         </div>
       </div>
-      <div class="hint">Sent to Actions as a single field: <code>target_bits</code> → “&lt;build_type&gt; &lt;bitrate&gt;”.</div>
     </div>
 
-    <div class="card">
-      <h3>User</h3>
-      <label>Console username</label>
-      <input id="user_name" placeholder="e.g. AirysDark"/>
-      <label>Console password</label>
-      <input id="user_password" type="password" placeholder="e.g. ••••••••"/>
-    </div>
-  </div>
-
-  <!-- Wi-Fi + SSH -->
-  <div class="grid" style="margin-top:16px">
-    <div class="card">
-      <h3>Wi-Fi</h3>
-      <label>Wi-Fi SSID</label>
-      <input id="wifi_ssid" placeholder="e.g. Raspbain"/>
-      <label>Wi-Fi password</label>
-      <input id="wifi_password" type="password" placeholder="e.g. ••••••••"/>
-    </div>
-
-    <div class="card">
-      <h3>SSH</h3>
-      <label>PermitRootLogin</label>
-      <select id="ssh_prl">
-        <option value="yes">yes</option>
-        <option value="no">no</option>
-        <option value="prohibit-password">prohibit-password</option>
-      </select>
-      <label>PasswordAuthentication</label>
-      <select id="ssh_pa">
-        <option value="yes">yes</option>
-        <option value="no">no</option>
-      </select>
-      <label>PubkeyAuthentication</label>
-      <select id="ssh_pk">
-        <option value="yes">yes</option>
-        <option value="no">no</option>
-      </select>
-    </div>
-  </div>
-
-  <!-- Network + Region -->
-  <div class="grid" style="margin-top:16px">
-    <div class="card">
-      <h3>Network</h3>
-      <div class="row2">
+    <!-- Accounts & Wi-Fi -->
+    <div class="card mb-6">
+      <div class="section-title">Console User & Wi-Fi</div>
+      <div class="grid2">
         <div>
-          <label>Static IPv4</label>
-          <input id="static_ip" placeholder="192.168.0.130"/>
+          <label class="label" for="user_name">Console username</label>
+          <input id="user_name" class="input" placeholder="e.g. AirysDark" />
         </div>
         <div>
-          <label>Gateway IPv4</label>
-          <input id="gateway" placeholder="192.168.0.1"/>
+          <label class="label" for="user_password">Console password</label>
+          <input id="user_password" type="password" class="input" placeholder="????????" />
+        </div>
+        <div>
+          <label class="label" for="wifi_ssid">Wi-Fi SSID</label>
+          <input id="wifi_ssid" class="input" placeholder="e.g. Raspbain" />
+        </div>
+        <div>
+          <label class="label" for="wifi_password">Wi-Fi password</label>
+          <input id="wifi_password" type="password" class="input" placeholder="????????" />
         </div>
       </div>
-      <label>DNS servers (semicolon-separated)</label>
-      <input id="dns" placeholder="1.1.1.1;8.8.8.8"/>
     </div>
 
+    <!-- SSH -->
+    <div class="card mb-6">
+      <div class="section-title">SSH (sshd_config)</div>
+      <div class="grid2">
+        <div>
+          <label class="label" for="ssh_permit_root_login">PermitRootLogin</label>
+          <select id="ssh_permit_root_login">
+            <option value="yes">yes</option>
+            <option value="prohibit-password">prohibit-password</option>
+            <option value="no">no</option>
+          </select>
+          <div class="hint">Allows SSH login as root. <b>yes</b> enables it; <b>prohibit-password</b> disables password but allows keys; <b>no</b> disables root SSH entirely.</div>
+        </div>
+        <div>
+          <label class="label" for="ssh_password_auth">PasswordAuthentication</label>
+          <select id="ssh_password_auth">
+            <option value="yes">yes</option>
+            <option value="no">no</option>
+          </select>
+          <div class="hint">Enable/disable password logins for SSH.</div>
+        </div>
+        <div>
+          <label class="label" for="ssh_pubkey_auth">PubkeyAuthentication</label>
+          <select id="ssh_pubkey_auth">
+            <option value="yes">yes</option>
+            <option value="no">no</option>
+          </select>
+          <div class="hint">Enable/disable public key authentication.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Networking -->
+    <div class="card mb-6">
+      <div class="section-title">Static IPv4</div>
+      <div class="grid2">
+        <div>
+          <label class="label" for="static_ip">Device IPv4</label>
+          <input id="static_ip" class="input" placeholder="e.g. 192.168.0.8" />
+        </div>
+        <div>
+          <label class="label" for="gateway">Gateway IPv4</label>
+          <input id="gateway" class="input" placeholder="e.g. 192.168.0.1" />
+        </div>
+        <div>
+          <label class="label" for="dns">DNS servers</label>
+          <input id="dns" class="input" placeholder="e.g. 1.1.1.1;8.8.8.8" />
+          <div class="hint">Semicolon separated.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Region & Locale -->
+    <div class="card mb-6">
+      <div class="section-title">Region &amp; Locale</div>
+      <div class="grid2">
+        <div>
+          <label class="label" for="wifi_country">Wi-Fi country</label>
+          <select id="wifi_country"></select>
+        </div>
+        <div>
+          <label class="label" for="timezone">Timezone</label>
+          <select id="timezone"></select>
+        </div>
+        <div>
+          <label class="label" for="keyboard">Keyboard layout</label>
+          <select id="keyboard"></select>
+          <div class="hint">Choose <b>custom</b> to enter an arbitrary XKB layout variant below.</div>
+        </div>
+        <div id="kbdCustomWrap" class="hidden">
+          <label class="label" for="keyboard_custom">Custom keyboard layout</label>
+          <input id="keyboard_custom" class="input" placeholder="e.g. us,intl" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
     <div class="card">
-      <h3>Region &amp; Locale</h3>
-      <label>Wi-Fi country</label>
-      <select id="wifi_country"></select>
+      <div class="section-title">Build &amp; Export</div>
+      <div class="flex flex-wrap gap-3 mb-4">
+        <button id="btnPreview" class="btn">Preview payload</button>
+        <button id="btnDownload" class="btn-outline">Download inputs.json</button>
 
-      <label>Timezone</label>
-      <select id="timezone"></select>
+        <!-- Optional: API dispatch (kept but collapsed). Expand if you want to trigger GitHub directly -->
+        <details>
+          <summary class="cursor-pointer select-none">Trigger workflow (optional)</summary>
+          <div class="grid2 mt-4">
+            <div>
+              <label class="label" for="owner">Owner</label>
+              <input id="owner" class="input" placeholder="e.g. AirysDark" />
+            </div>
+            <div>
+              <label class="label" for="repo">Repo</label>
+              <input id="repo" class="input" placeholder="e.g. Local-github" />
+            </div>
+            <div>
+              <label class="label" for="workflowPath">Workflow path</label>
+              <input id="workflowPath" class="input" value=".github/workflows/build.yml" />
+            </div>
+            <div>
+              <label class="label" for="ref">Ref/branch</label>
+              <input id="ref" class="input" value="main" />
+            </div>
+            <div class="md:col-span-2">
+              <label class="label" for="token">GitHub token (repo scope)</label>
+              <input id="token" type="password" class="input" placeholder="ghp_xxx or fine-grained token" />
+              <div class="hint">Your browser calls the GitHub API directly. Token is only used client-side.</div>
+            </div>
+          </div>
+          <div class="mt-3 flex gap-3">
+            <button id="btnDispatchMany" class="btn">Dispatch (current many-input workflow)</button>
+            <button id="btnDispatchBlob" class="btn-outline">Dispatch (compact <span class="mono">config_blob</span>)</button>
+          </div>
+          <p class="hint mt-2">Note: GitHub?s REST limit is <b>max 10 inputs</b>. If your workflow defines more than 10, use the <b>config_blob</b> model (update your workflow to accept a single JSON string and parse it inside).</p>
+        </details>
+      </div>
 
-      <label>Keyboard layout</label>
-      <select id="keyboard" onchange="toggleKeyboardCustom()"></select>
-
-      <label id="kb_custom_label" style="display:none">Custom layout
-        <input id="keyboard_custom" placeholder="e.g. us,intl"/>
-      </label>
+      <pre id="preview" class="mono text-xs bg-slate-900 text-slate-100 rounded-xl p-4 overflow-x-auto"></pre>
     </div>
   </div>
 
-  <!-- Build + progress + download -->
-  <div class="card" style="margin-top:16px">
-    <div class="row2">
-      <div>
-        <button class="btn" id="startBtn" type="button">Start build</button>
-        <div class="footer-note">This page dispatches the workflow, watches it finish, then fetches the artifact.</div>
-      </div>
-      <div>
-        <button class="btn secondary" id="downloadBtn" type="button" style="display:none">Download OS (.zip)</button>
-        <div id="downloadInfo" class="footer-note"></div>
-      </div>
-    </div>
-
-    <div class="status" id="status">Idle.</div>
-
-    <h3 style="margin-top:16px">workflow_dispatch JSON</h3>
-    <div id="jsonOut" class="out">—</div>
-
-    <h3 style="margin-top:16px">Diagnostics</h3>
-    <div id="diag" class="out">—</div>
-  </div>
-</div>
-
-<script>
-/* ---------- small helpers ---------- */
-function diag(msg){ const d=document.getElementById('diag'); d.textContent=(d.textContent==='—'?'':d.textContent+'\\n')+msg; }
-function setStatus(msg){ document.getElementById('status').textContent=msg; }
-function getOwner(){ return document.getElementById('owner').value.trim(); }
-function getRepo(){ return document.getElementById('repo').value.trim(); }
-function getWorkflowPath(){ return document.getElementById('workflow_path').value.trim(); }
-function getRef(){ return document.getElementById('branch_ref').value.trim() || 'main'; }
-function getToken(){ return document.getElementById('token').value.trim(); }
-function toggleKeyboardCustom(){
-  const v=document.getElementById('keyboard').value;
-  document.getElementById('kb_custom_label').style.display=(v==='custom')?'block':'none';
-}
-function targetBitsComputed(){
-  return document.getElementById('build_type').value + ' ' + document.getElementById('cpu_bitrate').value;
-}
-function gatherInputs(){
-  const inputs={
-    target_bits: targetBitsComputed(),
-    user_name: document.getElementById('user_name').value,
-    user_password: document.getElementById('user_password').value,
-    wifi_ssid: document.getElementById('wifi_ssid').value,
-    wifi_password: document.getElementById('wifi_password').value,
-    ssh_permit_root_login: document.getElementById('ssh_prl').value,
-    ssh_password_auth: document.getElementById('ssh_pa').value,
-    ssh_pubkey_auth: document.getElementById('ssh_pk').value,
-    static_ip: document.getElementById('static_ip').value,
-    gateway: document.getElementById('gateway').value,
-    dns: document.getElementById('dns').value,
-    wifi_country: document.getElementById('wifi_country').value,
-    timezone: document.getElementById('timezone').value,
-    keyboard: document.getElementById('keyboard').value,
-    keyboard_custom: document.getElementById('keyboard_custom').value
-  };
-  const body={ref:getRef(), inputs:{config: JSON.stringify(inputs)}};
-  document.getElementById('jsonOut').textContent=JSON.stringify(body,null,2);
-  return inputs;
-}
-async function gh(method, path, token, body){
-  const url=`https://api.github.com${path}`;
-  const res=await fetch(url,{
-    method,
-    headers:{'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28',...(token?{'Authorization':`Bearer ${token}`}:{})},
-    body: body?JSON.stringify(body):undefined
-  });
-  if(!res.ok){
-    const text=await res.text().catch(()=> '');
-    throw new Error(`${method} ${path} -> ${res.status} ${res.statusText} :: ${text}`);
-  }
-  if(res.status===204) return null;
-  return res.json();
-}
-
-/* ---------- populate selects from options.json ---------- */
-function fillSelect(id, arr, placeholder){
-  const el=document.getElementById(id);
-  el.innerHTML='';
-  const opt0=document.createElement('option'); opt0.value=''; opt0.textContent=placeholder||'(select)'; el.appendChild(opt0);
-  arr.forEach(v=>{ const o=document.createElement('option'); o.value=String(v); o.textContent=String(v); el.appendChild(o); });
-}
-async function loadOptions(){
-  const urls=[`config/options.json?v=${Date.now()}`,`./config/options.json?v=${Date.now()}`,`/config/options.json?v=${Date.now()}`];
-  let js=null,lastErr='';
-  for(const u of urls){
-    try{ const r=await fetch(u,{cache:'no-store'}); if(r.ok){ js=await r.json(); diag(`Loaded ${u}`); break; } else lastErr=`${u} -> ${r.status}`; }
-    catch(e){ lastErr=`${u} -> ${e}`; }
-  }
-  if(!js){ diag(`Could not load options.json (${lastErr}). Using minimal built-ins.`); js={}; }
-
-  const defaults=js.defaults||{};
-  const buildTypes=js.build_types||["pi"];
-  const cpuBits=js.cpu_bitrates||["64bit","32bit"];
-  const countries=js.wifi_countries||js.country||["AU","US","GB","NZ","CA"];
-  const zones=js.timezones||js.tz||["Australia/Sydney","UTC","Europe/London","America/New_York"];
-  const kbs=js.keyboards||js.kbd||["au","us","gb","us(intl)","custom"];
-
-  fillSelect('build_type', buildTypes, '(build type)'); 
-  fillSelect('cpu_bitrate', cpuBits, '(bitrate)');
-  fillSelect('wifi_country', countries, '(Wi-Fi country)');
-  fillSelect('timezone', zones, '(Timezone)');
-  fillSelect('keyboard', kbs, '(Keyboard)');
-
-  // apply defaults if present
-  if(defaults.build_type){ document.getElementById('build_type').value=defaults.build_type; }
-  if(defaults.cpu_bitrate){ document.getElementById('cpu_bitrate').value=defaults.cpu_bitrate; }
-  if(defaults.user_name){ document.getElementById('user_name').value=defaults.user_name; }
-  if(defaults.user_password){ document.getElementById('user_password').value=defaults.user_password; }
-  if(defaults.wifi_ssid){ document.getElementById('wifi_ssid').value=defaults.wifi_ssid; }
-  if(defaults.wifi_password){ document.getElementById('wifi_password').value=defaults.wifi_password; }
-  if(defaults.ssh_permit_root_login){ document.getElementById('ssh_prl').value=defaults.ssh_permit_root_login; }
-  if(defaults.ssh_password_auth){ document.getElementById('ssh_pa').value=defaults.ssh_password_auth; }
-  if(defaults.ssh_pubkey_auth){ document.getElementById('ssh_pk').value=defaults.ssh_pubkey_auth; }
-  if(defaults.static_ip){ document.getElementById('static_ip').value=defaults.static_ip; }
-  if(defaults.gateway){ document.getElementById('gateway').value=defaults.gateway; }
-  if(defaults.dns){ document.getElementById('dns').value=defaults.dns; }
-  if(defaults.wifi_country){ document.getElementById('wifi_country').value=defaults.wifi_country; }
-  if(defaults.timezone){ document.getElementById('timezone').value=defaults.timezone; }
-  if(defaults.keyboard){ document.getElementById('keyboard').value=defaults.keyboard; }
-  if(defaults.keyboard_custom){ document.getElementById('keyboard_custom').value=defaults.keyboard_custom; }
-  toggleKeyboardCustom();
-}
-loadOptions();
-
-/* ---------- dispatch + poll + download ---------- */
-async function dispatchWorkflow(){
-  const owner=getOwner(), repo=getRepo(), token=getToken(), ref=getRef(), path=getWorkflowPath();
-  if(!owner||!repo||!token) throw new Error('Missing Owner, Repo or Token');
-  const config=gatherInputs();
-  const body={ref, inputs:{config: JSON.stringify(config)}};
-  const wfPathEncoded=encodeURIComponent(path);
-  await gh('POST', `/repos/${owner}/${repo}/actions/workflows/${wfPathEncoded}/dispatches`, token, body);
-  return body;
-}
-async function findRecentRunId(afterISO){
-  const owner=getOwner(), repo=getRepo(), token=getToken();
-  const list=await gh('GET', `/repos/${owner}/${repo}/actions/runs?event=workflow_dispatch&per_page=10`, token);
-  const runs=(list.workflow_runs||[]).filter(r=> new Date(r.created_at) >= new Date(afterISO));
-  const ref=getRef();
-  const match=runs.find(r=> r.head_branch===ref);
-  return match?match.id:null;
-}
-async function waitForRun(runId,onTick){
-  const owner=getOwner(), repo=getRepo(), token=getToken();
-  let delay=4000,maxDelay=15000;
-  while(true){
-    const run=await gh('GET', `/repos/${owner}/${repo}/actions/runs/${runId}`, token);
-    onTick?.(run);
-    if(run.status==='completed'){
-      if(run.conclusion!=='success') throw new Error(`Run completed with conclusion=${run.conclusion}`);
-      return run;
-    }
-    await new Promise(r=>setTimeout(r,delay));
-    delay=Math.min(maxDelay,Math.floor(delay*1.25));
-  }
-}
-async function getFirstArtifact(runId){
-  const owner=getOwner(), repo=getRepo(), token=getToken();
-  const arts=await gh('GET', `/repos/${owner}/${repo}/actions/runs/${runId}/artifacts`, token);
-  if(!arts || !arts.artifacts || !arts.artifacts.length) throw new Error('No artifacts found on the run.');
-  const preferred=arts.artifacts.find(a=> a.name.toLowerCase().includes('local-github')) || arts.artifacts[0];
-  return preferred;
-}
-async function downloadArtifactZip(artifact){
-  const owner=getOwner(), repo=getRepo(), token=getToken();
-  const res=await fetch(`https://api.github.com/repos/${owner}/${repo}/actions/artifacts/${artifact.id}/zip`,{
-    headers:{'Accept':'application/vnd.github+json','Authorization':`Bearer ${token}`,'X-GitHub-Api-Version':'2022-11-28'}
-  });
-  if(!res.ok) throw new Error(`Download ZIP -> ${res.status} ${res.statusText}`);
-  const blob=await res.blob();
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  const ts=new Date().toISOString().replace(/[:.]/g,'-');
-  a.href=url; a.download=`${artifact.name||'artifact'}-${ts}.zip`;
-  document.body.appendChild(a); a.click(); a.remove();
-  URL.revokeObjectURL(url);
-}
-
-/* ---------- UI events ---------- */
-document.getElementById('startBtn').addEventListener('click', async ()=>{
-  try{
-    document.getElementById('downloadBtn').style.display='none';
-    document.getElementById('downloadInfo').textContent='';
-    setStatus('Dispatching workflow…');
-    const startedAt=new Date().toISOString();
-
-    const payload=await dispatchWorkflow();
-    diag('Dispatched with payload: '+JSON.stringify(payload));
-
-    setStatus('Looking for the run…');
-    let runId=null;
-    for(let i=0;i<12;i++){
-      runId=await findRecentRunId(startedAt);
-      if(runId)break;
-      await new Promise(r=>setTimeout(r,3000));
-    }
-    if(!runId) throw new Error('Could not find the workflow run after dispatch.');
-
-    setStatus(`Run #${runId} in progress… (build may take a while)`);
-    await waitForRun(runId,(run)=>{ setStatus(`Run #${run.id}: ${run.status} — ${run.head_branch}`); });
-
-    setStatus('Run succeeded. Collecting artifact…');
-    const art=await getFirstArtifact(runId);
-    document.getElementById('downloadBtn').style.display='inline-flex';
-    document.getElementById('downloadInfo').textContent=`Ready: ${art.name} (id: ${art.id})`;
-    document.getElementById('downloadBtn').onclick=async ()=>{
-      try{ setStatus('Downloading artifact…'); await downloadArtifactZip(art); setStatus('Download started.'); }
-      catch(e){ setStatus('Download failed.'); diag('Download error: '+e.message); }
+  <script>
+    const cfgPaths = {
+      defaults: "config/defaults.json",
+      build_types: "config/build_types.json",
+      cpu_bitrates: "config/cpu_bitrates.json",
+      wifi_countries: "config/wifi_countries.json",
+      timezones: "config/tz.json",
+      keyboards: "config/kbd.json"
     };
-  }catch(e){
-    setStatus('Error. See diagnostics.'); diag('ERROR: '+e.message);
-  }
-});
-</script>
+
+    const els = {
+      statusDot: document.getElementById("statusDot"),
+      statusText: document.getElementById("statusText"),
+      build_type: document.getElementById("build_type"),
+      cpu_bitrate: document.getElementById("cpu_bitrate"),
+      user_name: document.getElementById("user_name"),
+      user_password: document.getElementById("user_password"),
+      wifi_ssid: document.getElementById("wifi_ssid"),
+      wifi_password: document.getElementById("wifi_password"),
+      ssh_permit_root_login: document.getElementById("ssh_permit_root_login"),
+      ssh_password_auth: document.getElementById("ssh_password_auth"),
+      ssh_pubkey_auth: document.getElementById("ssh_pubkey_auth"),
+      static_ip: document.getElementById("static_ip"),
+      gateway: document.getElementById("gateway"),
+      dns: document.getElementById("dns"),
+      wifi_country: document.getElementById("wifi_country"),
+      timezone: document.getElementById("timezone"),
+      keyboard: document.getElementById("keyboard"),
+      keyboard_custom: document.getElementById("keyboard_custom"),
+      kbdCustomWrap: document.getElementById("kbdCustomWrap"),
+      preview: document.getElementById("preview"),
+      // dispatch bits
+      owner: document.getElementById("owner"),
+      repo: document.getElementById("repo"),
+      token: document.getElementById("token"),
+      workflowPath: document.getElementById("workflowPath"),
+      ref: document.getElementById("ref"),
+      // buttons
+      btnPreview: document.getElementById("btnPreview"),
+      btnDownload: document.getElementById("btnDownload"),
+      btnDispatchMany: document.getElementById("btnDispatchMany"),
+      btnDispatchBlob: document.getElementById("btnDispatchBlob")
+    };
+
+    function setStatus(ok, msg) {
+      els.statusDot.className = "w-2.5 h-2.5 rounded-full " + (ok ? "bg-emerald-500" : "bg-amber-500 animate-pulse");
+      els.statusText.textContent = msg;
+    }
+
+    async function fetchJSON(path) {
+      const cacheBust = `?v=${Date.now()}`;
+      const res = await fetch(path + cacheBust);
+      if (!res.ok) throw new Error(`${path} -> ${res.status}`);
+      return res.json();
+    }
+
+    function fillSelect(el, arr, { placeholder=null, selected=null } = {}) {
+      el.innerHTML = "";
+      if (placeholder) {
+        const opt = document.createElement("option");
+        opt.value = "";
+        opt.textContent = placeholder;
+        el.appendChild(opt);
+      }
+      for (const v of arr) {
+        const opt = document.createElement("option");
+        opt.value = v;
+        opt.textContent = v;
+        el.appendChild(opt);
+      }
+      if (selected != null) el.value = selected;
+    }
+
+    function computeTargetBits(build_type, cpu_bitrate) {
+      // For Pi targets, the workflow expects "pi 64bit" or "pi 32bit"
+      // Otherwise we still compose a readable target string.
+      const base = build_type.startsWith("pi") ? "pi" : build_type;
+      return `${base} ${cpu_bitrate}`;
+    }
+
+    function currentPayload() {
+      const keyboard = els.keyboard.value;
+      const kbFinal = (keyboard === "custom" && els.keyboard_custom.value.trim())
+        ? els.keyboard_custom.value.trim()
+        : keyboard;
+
+      const build_type = els.build_type.value;
+      const cpu_bitrate = els.cpu_bitrate.value;
+      const target_bits = computeTargetBits(build_type, cpu_bitrate);
+
+      return {
+        // Build
+        build_type,
+        cpu_bitrate,
+        target_bits,
+        // User & Wi-Fi
+        user_name: els.user_name.value,
+        user_password: els.user_password.value,
+        wifi_ssid: els.wifi_ssid.value,
+        wifi_password: els.wifi_password.value,
+        // SSH
+        ssh_permit_root_login: els.ssh_permit_root_login.value,
+        ssh_password_auth: els.ssh_password_auth.value,
+        ssh_pubkey_auth: els.ssh_pubkey_auth.value,
+        // Net
+        static_ip: els.static_ip.value,
+        gateway: els.gateway.value,
+        dns: els.dns.value,
+        // Region
+        wifi_country: els.wifi_country.value,
+        timezone: els.timezone.value,
+        keyboard: kbFinal,
+        keyboard_custom: (keyboard === "custom" ? els.keyboard_custom.value : "")
+      };
+    }
+
+    function downloadJSON(obj, filename) {
+      const blob = new Blob([JSON.stringify(obj, null, 2)], {type: "application/json"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    async function dispatchWorkflowManyInputs(owner, repo, workflowPath, ref, token, inputs) {
+      const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/actions/workflows/${encodeURIComponent(workflowPath)}/dispatches`;
+      const body = { ref, inputs };
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Accept": "application/vnd.github+json",
+          "X-GitHub-Api-Version": "2022-11-28",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(body)
+      });
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(`Dispatch failed ${res.status}: ${txt}`);
+      }
+      return true;
+    }
+
+    async function dispatchWorkflowBlob(owner, repo, workflowPath, ref, token, inputs) {
+      // For workflows that accept only:
+      //   inputs: { target_bits: "...", config_blob: "<base64 json>" }
+      const compact = { ...inputs };
+      const { target_bits } = compact;
+      delete compact.target_bits;
+      const blob = btoa(unescape(encodeURIComponent(JSON.stringify(compact))));
+      const minimal = { target_bits, config_blob: blob };
+
+      return dispatchWorkflowManyInputs(owner, repo, workflowPath, ref, token, minimal);
+    }
+
+    function wireKeyboardCustomToggle() {
+      const update = () => {
+        if (els.keyboard.value === "custom") {
+          els.kbdCustomWrap.classList.remove("hidden");
+        } else {
+          els.kbdCustomWrap.classList.add("hidden");
+        }
+      };
+      els.keyboard.addEventListener("change", update);
+      update();
+    }
+
+    async function init() {
+      try {
+        const [defaults, build_types, cpu_bitrates, countries, timezones, keyboards] = await Promise.all([
+          fetchJSON(cfgPaths.defaults),
+          fetchJSON(cfgPaths.build_types),
+          fetchJSON(cfgPaths.cpu_bitrates),
+          fetchJSON(cfgPaths.wifi_countries),
+          fetchJSON(cfgPaths.timezones),
+          fetchJSON(cfgPaths.keyboards)
+        ]);
+
+        fillSelect(els.build_type, build_types, { selected: defaults.build_type });
+        fillSelect(els.cpu_bitrate, cpu_bitrates, { selected: defaults.cpu_bitrate });
+
+        // User & Wi-Fi defaults
+        els.user_name.value = defaults.user_name || "";
+        els.user_password.value = defaults.user_password || "";
+        els.wifi_ssid.value = defaults.wifi_ssid || "";
+        els.wifi_password.value = defaults.wifi_password || "";
+
+        // SSH defaults
+        els.ssh_permit_root_login.value = defaults.ssh_permit_root_login || "prohibit-password";
+        els.ssh_password_auth.value = defaults.ssh_password_auth || "yes";
+        els.ssh_pubkey_auth.value = defaults.ssh_pubkey_auth || "yes";
+
+        // Net defaults
+        els.static_ip.value = defaults.static_ip || "";
+        els.gateway.value = defaults.gateway || "";
+        els.dns.value = defaults.dns || "";
+
+        // Region & locale
+        fillSelect(els.wifi_country, countries, { selected: defaults.wifi_country || "AU" });
+        fillSelect(els.timezone, timezones, { selected: defaults.timezone || "UTC" });
+        fillSelect(els.keyboard, keyboards, { selected: defaults.keyboard || "us" });
+        if (defaults.keyboard === "custom") {
+          els.keyboard_custom.value = defaults.keyboard_custom || "";
+        }
+        wireKeyboardCustomToggle();
+
+        setStatus(true, "Presets loaded.");
+      } catch (e) {
+        console.error(e);
+        setStatus(false, "Failed to load some config files. Check /config/*.json paths.");
+      }
+
+      // Buttons
+      els.btnPreview.addEventListener("click", () => {
+        const payload = currentPayload();
+        els.preview.textContent = JSON.stringify(payload, null, 2);
+      });
+
+      els.btnDownload.addEventListener("click", () => {
+        const payload = currentPayload();
+        downloadJSON(payload, "inputs.json");
+      });
+
+      els.btnDispatchMany.addEventListener("click", async () => {
+        const owner = els.owner.value.trim();
+        const repo = els.repo.value.trim();
+        const path = els.workflowPath.value.trim();
+        const ref = els.ref.value.trim();
+        const token = els.token.value.trim();
+        const payload = currentPayload();
+        els.preview.textContent = "Dispatching?";
+        try {
+          await dispatchWorkflowManyInputs(owner, repo, path, ref, token, payload);
+          els.preview.textContent = "? Dispatched with many inputs.\nCheck Actions ? Workflows for progress.";
+        } catch (e) {
+          els.preview.textContent = `? ${e.message}`;
+        }
+      });
+
+      els.btnDispatchBlob.addEventListener("click", async () => {
+        const owner = els.owner.value.trim();
+        const repo = els.repo.value.trim();
+        const path = els.workflowPath.value.trim();
+        const ref = els.ref.value.trim();
+        const token = els.token.value.trim();
+        const payload = currentPayload();
+        els.preview.textContent = "Dispatching (compact)?";
+        try {
+          await dispatchWorkflowBlob(owner, repo, path, ref, token, payload);
+          els.preview.textContent = "? Dispatched with compact config_blob.\nCheck Actions ? Workflows for progress.";
+        } catch (e) {
+          els.preview.textContent = `? ${e.message}`;
+        }
+      });
+    }
+
+    init();
+  </script>
 </body>
 </html>
