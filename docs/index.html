@@ -1,39 +1,198 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Local-github Config</title>
+<meta charset="utf-8">
+<title>Local-github Config (Safe)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root { --bg:#0b0f14; --card:#121821; --muted:#a6b3c2; --text:#e8eef6; --accent:#5cc8ff; }
+  body { margin:0; font-family:system-ui,Segoe UI,Roboto,Arial; background:var(--bg); color:var(--text); }
+  .wrap { max-width:1100px; margin:24px auto; padding:0 16px; }
+  .row { display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
+  .card { background:var(--card); border:1px solid #1f2733; border-radius:12px; padding:16px; }
+  label { font-size:12px; color:var(--muted); display:block; margin-top:8px; }
+  input, select, textarea, button { width:100%; box-sizing:border-box; padding:10px; border-radius:8px; border:1px solid #2a3342; background:#0e141c; color:var(--text); }
+  small { color:var(--muted); }
+  button { margin-top:12px; background:var(--accent); color:#001019; border:none; font-weight:600; cursor:pointer; }
+  code { background:#0e141c; padding:2px 6px; border-radius:6px; border:1px solid #2a3342; }
+  .out { white-space:pre-wrap; background:#0e141c; padding:12px; border-radius:8px; border:1px solid #2a3342; min-height:80px; }
+  .two { display:grid; grid-template-columns: 1fr 1fr; gap:8px; }
+</style>
 </head>
 <body>
-  <form action="https://github.com/AirysDark/Local-github/actions/workflows/build.yml" method="post">
-    <label>Build Target + Bitness:
-      <select name="target_bits">
-        <option>pi 64bit</option>
-        <option>pi 32bit</option>
-      </select>
-    </label><br>
+<div class="wrap">
 
-    <label>Console Username: <input type="text" name="user_name" value="@users:1"></label><br>
-    <label>Console Password: <input type="password" name="user_password"></label><br>
+  <div class="row">
+    <div class="card">
+      <h2>Repository</h2>
+      <label>Owner</label>
+      <input id="owner" placeholder="owner (required)">
+      <label>Repo</label>
+      <input id="repo" placeholder="repo (required)">
+      <label>Workflow file path</label>
+      <input id="workflow" value=".github/workflows/build.yml">
+      <label>Ref/branch</label>
+      <input id="ref" value="main">
+      <small>This page never sends the request. It only prints the JSON + a curl command you can run locally.</small>
+    </div>
 
-    <label>Wi-Fi SSID: <input type="text" name="wifi_ssid" value="@wifi:1"></label><br>
-    <label>Wi-Fi Password: <input type="password" name="wifi_password"></label><br>
+    <div class="card">
+      <h2>Build Target</h2>
+      <div class="two">
+        <div>
+          <label>Build type <small>(e.g. pi)</small></label>
+          <select id="build_type">
+            <option value="pi" selected>pi</option>
+            <option value="pc">pc (reserved)</option>
+          </select>
+        </div>
+        <div>
+          <label>CPU bitrate</label>
+          <select id="cpu_bitrate">
+            <option value="64bit" selected>64bit</option>
+            <option value="32bit">32bit</option>
+          </select>
+        </div>
+      </div>
+      <label>target_bits (auto)</label>
+      <input id="target_bits" value="pi 64bit" readonly>
+      <small>Workflow currently builds Raspberry Pi images. PC reserved for future.</small>
+    </div>
+  </div>
 
-    <label>SSH PermitRootLogin: <input type="text" name="ssh_permit_root_login" value="@ssh:0"></label><br>
-    <label>SSH PasswordAuthentication: <input type="text" name="ssh_password_auth"></label><br>
-    <label>SSH PubkeyAuthentication: <input type="text" name="ssh_pubkey_auth"></label><br>
+  <div class="row" style="margin-top:16px">
+    <div class="card">
+      <h2>User</h2>
+      <label>user_name <small>(Console username or preset token like <code>@users:1</code>)</small></label>
+      <input id="user_name" value="@users:1">
+      <label>user_password <small>(ignored if preset token includes password)</small></label>
+      <input id="user_password" type="password" value="">
 
-    <label>Static IPv4: <input type="text" name="static_ip" value="@net:0"></label><br>
-    <label>Gateway IPv4: <input type="text" name="gateway"></label><br>
-    <label>DNS Servers: <input type="text" name="dns"></label><br>
+      <h2 style="margin-top:14px">Wi‑Fi</h2>
+      <label>wifi_ssid <small>(SSID or preset token like <code>@wifi:1</code>)</small></label>
+      <input id="wifi_ssid" value="@wifi:1">
+      <label>wifi_password <small>(ignored if preset token includes password)</small></label>
+      <input id="wifi_password" type="password" value="">
+    </div>
 
-    <label>Wi-Fi Country: <input type="text" name="wifi_country" value="@country:0"></label><br>
-    <label>Timezone: <input type="text" name="timezone" value="@tz:0"></label><br>
+    <div class="card">
+      <h2>SSH</h2>
+      <label>ssh_permit_root_login <small><code>yes</code>=allow root; <code>prohibit-password</code>=keys only; <code>no</code>=disable</small></label>
+      <input id="ssh_prl" value="@ssh:0">
+      <label>ssh_password_auth <small>(<code>yes</code> or <code>no</code>; ignored if using @ssh)</small></label>
+      <input id="ssh_pa" value="">
+      <label>ssh_pubkey_auth <small>(<code>yes</code> or <code>no</code>; ignored if using @ssh)</small></label>
+      <input id="ssh_pk" value="">
+    </div>
+  </div>
 
-    <label>Keyboard Layout: <input type="text" name="keyboard" value="@kbd:0"></label><br>
-    <label>Custom Keyboard (if chosen): <input type="text" name="keyboard_custom"></label><br>
+  <div class="row" style="margin-top:16px">
+    <div class="card">
+      <h2>Networking (Static IPv4)</h2>
+      <label>static_ip <small>(IPv4 or preset <code>@net:n</code>)</small></label>
+      <input id="static_ip" value="@net:0">
+      <label>gateway <small>(router IPv4)</small></label>
+      <input id="gateway" value="">
+      <label>dns <small>(semicolon-separated, e.g. <code>1.1.1.1;8.8.8.8</code>)</small></label>
+      <input id="dns" value="">
+    </div>
 
-    <button type="submit">Start Build</button>
-  </form>
+    <div class="card">
+      <h2>Region & Locale</h2>
+      <label>wifi_country <small>(ISO-3166 code or preset <code>@country:n</code>)</small></label>
+      <input id="wifi_country" value="@country:0">
+      <label>timezone <small>(IANA tz or preset <code>@tz:n</code>)</small></label>
+      <input id="timezone" value="@tz:0">
+      <label>keyboard <small>(XKB layout or preset <code>@kbd:n</code> or <code>custom</code>)</small></label>
+      <input id="keyboard" value="@kbd:0">
+      <label>keyboard_custom <small>(when layout is <code>custom</code>, e.g. <code>us,intl</code>)</small></label>
+      <input id="keyboard_custom" value="">
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <button id="buildBtn">Show build payload</button>
+    <div style="margin-top:8px;">
+      <label>Personal Access Token (optional — used only in the curl you run locally)</label>
+      <input id="token" type="password" placeholder="ghp_xxx (NOT sent anywhere by this page)">
+      <small>Security: the token is never transmitted by this page. It’s only inserted into a copyable <code>curl</code> command below.</small>
+    </div>
+
+    <h3 style="margin-top:16px">workflow_dispatch JSON</h3>
+    <div id="jsonOut" class="out">Click “Show build payload”.</div>
+
+    <h3 style="margin-top:16px">curl command (copy & run locally)</h3>
+    <div id="curlOut" class="out">—</div>
+
+    <h3 style="margin-top:16px">Repo details used</h3>
+    <div id="repoOut" class="out">—</div>
+  </div>
+
+</div>
+
+<script>
+function targetBits() {
+  return document.getElementById('build_type').value + ' ' + document.getElementById('cpu_bitrate').value;
+}
+function payload() {
+  return {
+    ref: document.getElementById('ref').value || 'main',
+    inputs: {
+      target_bits: targetBits(),
+      user_name: document.getElementById('user_name').value,
+      user_password: document.getElementById('user_password').value,
+      wifi_ssid: document.getElementById('wifi_ssid').value,
+      wifi_password: document.getElementById('wifi_password').value,
+      ssh_permit_root_login: document.getElementById('ssh_prl').value,
+      ssh_password_auth: document.getElementById('ssh_pa').value,
+      ssh_pubkey_auth: document.getElementById('ssh_pk').value,
+      static_ip: document.getElementById('static_ip').value,
+      gateway: document.getElementById('gateway').value,
+      dns: document.getElementById('dns').value,
+      wifi_country: document.getElementById('wifi_country').value,
+      timezone: document.getElementById('timezone').value,
+      keyboard: document.getElementById('keyboard').value,
+      keyboard_custom: document.getElementById('keyboard_custom').value
+    }
+  };
+}
+function showPayload() {
+  const owner = (document.getElementById('owner').value || '').trim();
+  const repo  = (document.getElementById('repo').value  || '').trim();
+  const wf    = (document.getElementById('workflow').value || '.github/workflows/build.yml').trim();
+  const ref   = (document.getElementById('ref').value || 'main').trim();
+  const token = (document.getElementById('token').value || '').trim();
+
+  if (!owner || !repo) {
+    document.getElementById('jsonOut').textContent = 'Owner and repo are required.';
+    document.getElementById('curlOut').textContent = '—';
+    document.getElementById('repoOut').textContent = '—';
+    return;
+  }
+
+  const body = payload();
+  const url = `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${encodeURIComponent(wf)}/dispatches`;
+
+  document.getElementById('jsonOut').textContent = JSON.stringify(body, null, 2);
+  document.getElementById('repoOut').textContent = JSON.stringify({ url, owner, repo, workflow: wf, ref }, null, 2);
+
+  const authLine = token ? f`-H "Authorization: Bearer ${token}"` : '# supply -H "Authorization: Bearer <TOKEN>"';
+  const curl = [
+    'curl -s -X POST \',
+    '  -H "Accept: application/vnd.github+json" \',
+    '  -H "X-GitHub-Api-Version: 2022-11-28" \',
+    (token ? f'  -H "Authorization: Bearer {token}" \' : '  # -H "Authorization: Bearer <TOKEN>" \'),
+    f'  https://api.github.com/repos/{owner}/{repo}/actions/workflows/{encodeURIComponent(wf)}/dispatches \',
+    "  -d '" + JSON.stringify(body).replace(/'/g, "'"'"'") + "'"
+  ].join("\n");
+  document.getElementById('curlOut').textContent = curl;
+}
+document.getElementById('buildBtn').addEventListener('click', function(e){
+  e.preventDefault();
+  // refresh target_bits display
+  document.getElementById('target_bits').value = targetBits();
+  showPayload();
+});
+</script>
 </body>
 </html>
