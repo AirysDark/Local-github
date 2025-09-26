@@ -1,12 +1,52 @@
-name: Build Local-github (Pi via JSON presets)
+name: Build OS image
 
 on:
   workflow_dispatch:
+    inputs:
+      config:
+        description: "All settings as a JSON string"
+        required: true
+        type: string
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - name: Dummy step
-        run: echo "This would parse config/options.json and build image"
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Show received config
+        run: |
+          echo '${{ github.event.inputs.config }}' > config.json
+          echo "=== config.json ==="
+          cat config.json | jq . || cat config.json
+
+      # (optional) Export a few fields to outputs/env if you need them inline
+      - name: Parse fields
+        id: cfg
+        shell: bash
+        run: |
+          echo '${{ github.event.inputs.config }}' > config.json
+          jq -r '
+            to_entries|map("\(.key)=\(.value)")|.[]
+          ' config.json | sed 's/ /_/g' | while IFS= read -r line; do
+            # Write simple key=value into GITHUB_OUTPUT if the value is scalar
+            key="${line%%=*}"; val="${line#*=}"
+            if [[ "$val" != \{* && "$val" != \[* ]]; then
+              echo "$key=$val" >> "$GITHUB_OUTPUT"
+            fi
+          done
+
+      # Your real build step(s) — pass config.json to your script
+      - name: Build image
+        run: |
+          ./scripts/build.sh config.json
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: local-github-os
+          path: output/**/*.zip
+          if-no-files-found: error
+          retention-days: 7
