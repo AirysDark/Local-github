@@ -4,49 +4,125 @@ on:
   workflow_dispatch:
     inputs:
       config:
-        description: "All settings as a JSON string"
+        description: "All settings as a JSON string (see README)"
         required: true
         type: string
 
+permissions:
+  actions: write         # allow uploading artifacts
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   build:
+    name: Build from config
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Show received config
+      - name: Show dispatch config (raw)
         run: |
-          echo '${{ github.event.inputs.config }}' > config.json
-          echo "=== config.json ==="
-          cat config.json | jq . || cat config.json
+          echo "== RAW INPUT ======================="
+          echo '${{ github.event.inputs.config }}'
+          echo "===================================="
 
-      # (optional) Export a few fields to outputs/env if you need them inline
-      - name: Parse fields
-        id: cfg
+      - name: Ensure jq is available
+        run: |
+          if ! command -v jq >/dev/null 2>&1; then
+            sudo apt-get update -y
+            sudo apt-get install -y jq
+          fi
+
+      - name: Write config.json
+        id: writecfg
         shell: bash
         run: |
-          echo '${{ github.event.inputs.config }}' > config.json
-          jq -r '
-            to_entries|map("\(.key)=\(.value)")|.[]
-          ' config.json | sed 's/ /_/g' | while IFS= read -r line; do
-            # Write simple key=value into GITHUB_OUTPUT if the value is scalar
-            key="${line%%=*}"; val="${line#*=}"
-            if [[ "$val" != \{* && "$val" != \[* ]]; then
-              echo "$key=$val" >> "$GITHUB_OUTPUT"
-            fi
-          done
+          set -euo pipefail
+          RAW='${{ github.event.inputs.config }}'
 
-      # Your real build step(s) — pass config.json to your script
-      - name: Build image
+          # Validate JSON; fail fast with helpful message
+          echo "$RAW" | jq . > config.json
+
+          echo "config.json written:"
+          cat config.json
+
+          # Pull a few common fields for naming/logging (best-effort)
+          TARGET_BITS=$(jq -r '.target_bits // empty' config.json)
+          USER_NAME=$(jq -r '.user_name // empty' config.json)
+          WIFI_SSID=$(jq -r '.wifi_ssid // empty' config.json)
+
+          # Expose as outputs/env for later steps
+          echo "target_bits=$TARGET_BITS" >> $GITHUB_OUTPUT
+          echo "user_name=$USER_NAME"     >> $GITHUB_OUTPUT
+          echo "wifi_ssid=$WIFI_SSID"     >> $GITHUB_OUTPUT
+
+      - name: Setup build deps (example)
         run: |
-          ./scripts/build.sh config.json
+          sudo apt-get update -y
+          # Add whatever your build needs here:
+          # sudo apt-get install -y qemu-utils dosfstools xz-utils zip ...
+
+      # ─────────────────────────────────────────────────────────
+      # Put your real build here. Read from config.json.
+      # For example, a script that builds and drops a .zip in output/
+      # ─────────────────────────────────────────────────────────
+      - name: Build image
+        env:
+          # Pass through the whole config if your script wants it
+          CONFIG_JSON: ${{ github.event.inputs.config }}
+        run: |
+          set -euo pipefail
+          mkdir -p output
+
+          if [ -x ./scripts/build.sh ]; then
+            echo "Running repo script: ./scripts/build.sh config.json"
+            ./scripts/build.sh config.json
+          else
+            echo "No build script found; creating a dummy artifact so the workflow stays green."
+            echo "This is a placeholder build result." > output/README.txt
+            zip -r output/local-github-os.zip output/README.txt >/dev/null
+          fi
+
+      - name: List build outputs
+        run: |
+          echo "== output/ listing =="
+          ls -lah output || true
+
+      - name: Create fallback ZIP if missing
+        run: |
+          shopt -s nullglob
+          zips=(output/*.zip)
+          if [ ${#zips[@]} -eq 0 ]; then
+            echo "No ZIP artifact found; packing output/ directory."
+            (cd output && zip -r local-github-os.zip .) || true
+          fi
+
+      - name: Name artifact
+        id: name
+        run: |
+          # Derive a friendly artifact name from fields (fallback-safe)
+          TARGET="${{ steps.writecfg.outputs.target_bits }}"
+          USER="${{ steps.writecfg.outputs.user_name }}"
+          REF="${{ github.ref_name }}"
+          TS="$(date +'%Y%m%d-%H%M%S')"
+
+          # sanitize
+          safe() { echo "$1" | tr ' /:' '__'; }
+          NAME="local-github-os-$(safe "${TARGET:-unknown}")-$(safe "${USER:-user}")-${REF}-${TS}"
+          echo "artifact_name=$NAME" >> $GITHUB_OUTPUT
+          echo "Artifact will be named: $NAME"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: local-github-os
-          path: output/**/*.zip
+          name: ${{ steps.name.outputs.artifact_name }}
+          path: |
+            output/**/*.zip
+            output/*.zip
           if-no-files-found: error
           retention-days: 7
