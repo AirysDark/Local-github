@@ -1,32 +1,380 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <title>Local-github Builder</title>
-  <script>
-    async function startBuild() {
-      const owner = document.getElementById('owner').value;
-      const repo = document.getElementById('repo').value;
-      const token = document.getElementById('token').value;
-      const url = `https://api.github.com/repos/${owner}/${repo}/actions/workflows/build.yml/dispatches`;
-      const resp = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Accept": "application/vnd.github+json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({ref:"main"})
-      });
-      alert("Triggered: " + resp.status);
-    }
-  </script>
+<meta charset="utf-8">
+<title>Local-github — Full Config Builder</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root { --bg:#0b0f14; --card:#121821; --muted:#a6b3c2; --text:#e8eef6; --accent:#5cc8ff; }
+  body { margin:0; font-family:system-ui,Segoe UI,Roboto,Arial; background:var(--bg); color:var(--text); }
+  .wrap { max-width:1200px; margin:40px auto; padding:0 16px; }
+  h1 { font-size:28px; margin:0 0 8px; }
+  .row { display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
+  .card { background:var(--card); border:1px solid #1f2733; border-radius:12px; padding:16px; }
+  .card h2 { font-size:18px; margin:0 0 8px; }
+  label { font-size:12px; color:var(--muted); display:block; margin-top:10px; }
+  input, select, textarea, button { width:100%; box-sizing:border-box; padding:10px; border-radius:8px; border:1px solid #2a3342; background:#0e141c; color:var(--text); }
+  input::placeholder, textarea::placeholder { color:#6f8096; }
+  button { margin-top:12px; background:var(--accent); color:#001019; border:none; font-weight:600; cursor:pointer; }
+  small { color:var(--muted); }
+  .two { display:grid; grid-template-columns: 1fr 1fr; gap:8px; }
+  .out { white-space:pre-wrap; background:#0e141c; padding:12px; border-radius:8px; border:1px solid #2a3342; min-height:80px; }
+  .help { color:var(--muted); font-size:12px; }
+</style>
 </head>
 <body>
-  <h1>Local-github Builder</h1>
-  <p>Enter repository info and trigger workflow:</p>
-  <label>Owner: <input id="owner" value="yourname"/></label><br/>
-  <label>Repo: <input id="repo" value="Local-github"/></label><br/>
-  <label>Token: <input id="token" type="password"/></label><br/>
-  <button onclick="startBuild()">Start build</button>
+<div class="wrap">
+  <h1>Local-github — Full Config Builder</h1>
+  <p class="help">Select from presets (dropdowns) or type manual overrides. All values are sent to the workflow as plain inputs.</p>
+
+  <div class="row">
+    <div class="card">
+      <h2>Repository</h2>
+      <label>Owner</label>
+      <input id="owner" placeholder="owner (required)">
+      <label>Repo</label>
+      <input id="repo" placeholder="repo (required)">
+      <label>Workflow file path</label>
+      <input id="workflow" value=".github/workflows/build.yml">
+      <label>Ref/branch</label>
+      <input id="ref" value="main">
+      <label>GitHub Token (repo-scoped, Actions: read/write)</label>
+      <input id="token" type="password" placeholder="paste PAT at runtime (never stored)">
+      <button id="buildBtn">Start build</button>
+      <div id="out" class="out" style="margin-top:8px;">Ready.</div>
+    </div>
+
+    <div class="card">
+      <h2>Build Target</h2>
+      <div class="two">
+        <div>
+          <label>Build type</label>
+          <select id="build_type">
+            <option value="pi" selected>pi</option>
+            <option value="pc">pc (reserved)</option>
+          </select>
+        </div>
+        <div>
+          <label>CPU bitrate</label>
+          <select id="cpu_bitrate">
+            <option value="64bit" selected>64bit</option>
+            <option value="32bit">32bit</option>
+          </select>
+        </div>
+      </div>
+      <label>target_bits (auto)</label>
+      <input id="target_bits" value="pi 64bit" readonly>
+      <small class="help">Workflow currently builds Pi images. PC path is reserved.</small>
+    </div>
+  </div>
+
+  <div class="row" style="margin-top:16px">
+    <div class="card">
+      <h2>User</h2>
+      <label>Preset user</label>
+      <select id="user_preset"></select>
+      <label>user_name (manual override)</label>
+      <input id="user_name" placeholder="e.g. chip">
+      <label>user_password (manual override)</label>
+      <input id="user_password" type="password" placeholder="password">
+    </div>
+
+    <div class="card">
+      <h2>Wi‑Fi</h2>
+      <label>Preset Wi‑Fi</label>
+      <select id="wifi_preset"></select>
+      <label>wifi_ssid (manual override)</label>
+      <input id="wifi_ssid" placeholder="SSID">
+      <label>wifi_password (manual override)</label>
+      <input id="wifi_password" type="password" placeholder="password">
+    </div>
+  </div>
+
+  <div class="row" style="margin-top:16px">
+    <div class="card">
+      <h2>SSH</h2>
+      <label>Preset SSH</label>
+      <select id="ssh_preset"></select>
+      <label class="help">PermitRootLogin: <code>yes</code>=allow any root login, <code>prohibit-password</code>=keys only, <code>no</code>=disabled.</label>
+      <label>ssh_permit_root_login (manual override)</label>
+      <input id="ssh_prl" placeholder="yes | no | prohibit-password">
+      <label>ssh_password_auth (manual override)</label>
+      <input id="ssh_pa" placeholder="yes | no">
+      <label>ssh_pubkey_auth (manual override)</label>
+      <input id="ssh_pk" placeholder="yes | no">
+    </div>
+
+    <div class="card">
+      <h2>Networking (Static IPv4)</h2>
+      <label>Preset IP tuple</label>
+      <select id="net_preset"></select>
+      <div class="two">
+        <div>
+          <label>static_ip</label>
+          <input id="static_ip" placeholder="e.g. 192.168.0.8">
+        </div>
+        <div>
+          <label>gateway</label>
+          <input id="gateway" placeholder="e.g. 192.168.0.1">
+        </div>
+      </div>
+      <label>dns (semicolon-separated)</label>
+      <input id="dns" placeholder="e.g. 1.1.1.1;8.8.8.8">
+    </div>
+  </div>
+
+  <div class="row" style="margin-top:16px">
+    <div class="card">
+      <h2>Region & Locale</h2>
+      <label>Wi‑Fi country (ISO 3166-1 alpha‑2)</label>
+      <select id="wifi_country"></select>
+      <label>Timezone (IANA)</label>
+      <select id="timezone"></select>
+      <label>Keyboard layout</label>
+      <select id="keyboard"></select>
+      <label>keyboard_custom (when layout = custom)</label>
+      <input id="keyboard_custom" placeholder="e.g. us,intl">
+    </div>
+
+    <div class="card">
+      <h2>Preview Inputs</h2>
+      <textarea id="preview" rows="16" readonly></textarea>
+      <small class="help">These are the exact inputs sent to workflow_dispatch.</small>
+    </div>
+  </div>
+</div>
+
+<script>
+const out = (msg) => { document.getElementById('out').textContent = msg; };
+const pv = () => document.getElementById('preview');
+
+function updateTargetBits(){
+  const t = document.getElementById('build_type').value;
+  const b = document.getElementById('cpu_bitrate').value;
+  document.getElementById('target_bits').value = `${t} ${b}`;
+}
+
+function fillSelect(sel, arr, labelfn, valuefn){
+  sel.innerHTML = "";
+  const opt0 = document.createElement('option');
+  opt0.value = "";
+  opt0.textContent = "(no preset)";
+  sel.appendChild(opt0);
+  arr.forEach((it,idx)=>{
+    const o = document.createElement('option');
+    o.value = idx.toString();
+    o.textContent = labelfn ? labelfn(it, idx) : (""+it);
+    o.dataset.value = valuefn ? valuefn(it, idx) : (""+it);
+    sel.appendChild(o);
+  });
+}
+
+function applyPresetToFields(sel, setter){
+  const idx = sel.value;
+  if (!idx) return;
+  const opt = sel.options[sel.selectedIndex];
+  const dataAttr = opt.dataset.value;
+  try {
+    const obj = JSON.parse(dataAttr);
+    setter(obj);
+  } catch {
+    // single-string preset
+    setter(dataAttr);
+  }
+}
+
+async function loadPresets(){
+  const tryUrls = ['../config/options.json', '/config/options.json'];
+  let js = null;
+  for (const u of tryUrls){
+    try {
+      const r = await fetch(u, {cache:'no-store'});
+      if (r.ok){ js = await r.json(); break; }
+    } catch {}
+  }
+  if (!js) throw new Error('options.json not found');
+
+  // Users
+  fillSelect(
+    document.getElementById('user_preset'),
+    js.users || [],
+    (u,i)=> `${u.name}`,
+    (u,i)=> JSON.stringify({name:u.name,password:u.password})
+  );
+  // Wi-Fi
+  fillSelect(
+    document.getElementById('wifi_preset'),
+    js.wifi || [],
+    (w,i)=> `${w.ssid}`,
+    (w,i)=> JSON.stringify({ssid:w.ssid,password:w.password})
+  );
+  // SSH
+  fillSelect(
+    document.getElementById('ssh_preset'),
+    js.ssh || [],
+    (s,i)=> s.label || `${s.permit_root_login}:${s.password_auth}:${s.pubkey_auth}`,
+    (s,i)=> JSON.stringify({permit_root_login:s.permit_root_login,password_auth:s.password_auth,pubkey_auth:s.pubkey_auth})
+  );
+  // NET
+  fillSelect(
+    document.getElementById('net_preset'),
+    js.net_ipv4 || [],
+    (n,i)=> `${n.ip} → ${n.gateway} (${n.dns})`,
+    (n,i)=> JSON.stringify({ip:n.ip,gateway:n.gateway,dns:n.dns})
+  );
+  // Countries
+  fillSelect(
+    document.getElementById('wifi_country'),
+    js.wifi_countries || [],
+    (c)=> c,
+    (c)=> JSON.stringify(c)
+  );
+  // Timezones
+  fillSelect(
+    document.getElementById('timezone'),
+    js.timezones || [],
+    (t)=> t,
+    (t)=> JSON.stringify(t)
+  );
+  // Keyboards
+  fillSelect(
+    document.getElementById('keyboard'),
+    js.keyboards || [],
+    (k)=> k,
+    (k)=> JSON.stringify(k)
+  );
+
+  // When a preset is selected, load it into manual fields
+  document.getElementById('user_preset').addEventListener('change', function(){
+    applyPresetToFields(this, (o)=>{
+      document.getElementById('user_name').value = o.name || "";
+      document.getElementById('user_password').value = o.password || "";
+      refreshPreview();
+    });
+  });
+  document.getElementById('wifi_preset').addEventListener('change', function(){
+    applyPresetToFields(this, (o)=>{
+      document.getElementById('wifi_ssid').value = o.ssid || "";
+      document.getElementById('wifi_password').value = o.password || "";
+      refreshPreview();
+    });
+  });
+  document.getElementById('ssh_preset').addEventListener('change', function(){
+    applyPresetToFields(this, (o)=>{
+      document.getElementById('ssh_prl').value = o.permit_root_login || "";
+      document.getElementById('ssh_pa').value  = o.password_auth || "";
+      document.getElementById('ssh_pk').value  = o.pubkey_auth || "";
+      refreshPreview();
+    });
+  });
+  document.getElementById('net_preset').addEventListener('change', function(){
+    applyPresetToFields(this, (o)=>{
+      document.getElementById('static_ip').value = o.ip || "";
+      document.getElementById('gateway').value   = o.gateway || "";
+      document.getElementById('dns').value       = o.dns || "";
+      refreshPreview();
+    });
+  });
+
+  // Defaults: if there are entries, pre-load first for convenience
+  if ((js.users||[]).length){
+    document.getElementById('user_preset').selectedIndex = 1;
+    document.getElementById('user_preset').dispatchEvent(new Event('change'));
+  }
+  if ((js.wifi||[]).length){
+    document.getElementById('wifi_preset').selectedIndex = 1;
+    document.getElementById('wifi_preset').dispatchEvent(new Event('change'));
+  }
+  if ((js.ssh||[]).length){
+    document.getElementById('ssh_preset').selectedIndex = 1;
+    document.getElementById('ssh_preset').dispatchEvent(new Event('change'));
+  }
+  if ((js.net_ipv4||[]).length){
+    document.getElementById('net_preset').selectedIndex = 1;
+    document.getElementById('net_preset').dispatchEvent(new Event('change'));
+  }
+  if ((js.wifi_countries||[]).length){
+    document.getElementById('wifi_country').selectedIndex = 1;
+  }
+  if ((js.timezones||[]).length){
+    document.getElementById('timezone').selectedIndex = 1;
+  }
+  if ((js.keyboards||[]).length){
+    document.getElementById('keyboard').selectedIndex = 1;
+  }
+
+  refreshPreview();
+}
+
+function gatherInputs(){
+  updateTargetBits();
+  return {
+    target_bits: document.getElementById('target_bits').value,
+    user_name: document.getElementById('user_name').value,
+    user_password: document.getElementById('user_password').value,
+    wifi_ssid: document.getElementById('wifi_ssid').value,
+    wifi_password: document.getElementById('wifi_password').value,
+    ssh_permit_root_login: document.getElementById('ssh_prl').value,
+    ssh_password_auth: document.getElementById('ssh_pa').value,
+    ssh_pubkey_auth: document.getElementById('ssh_pk').value,
+    static_ip: document.getElementById('static_ip').value,
+    gateway: document.getElementById('gateway').value,
+    dns: document.getElementById('dns').value,
+    wifi_country: JSON.parse(document.getElementById('wifi_country').options[document.getElementById('wifi_country').selectedIndex].dataset.value || '""'),
+    timezone: JSON.parse(document.getElementById('timezone').options[document.getElementById('timezone').selectedIndex].dataset.value || '""'),
+    keyboard: JSON.parse(document.getElementById('keyboard').options[document.getElementById('keyboard').selectedIndex].dataset.value || '""'),
+    keyboard_custom: document.getElementById('keyboard_custom').value
+  };
+}
+
+function refreshPreview(){
+  pv().value = JSON.stringify(gatherInputs(), null, 2);
+}
+
+async function dispatch(){
+  const owner = document.getElementById('owner').value.trim();
+  const repo = document.getElementById('repo').value.trim();
+  const workflow = document.getElementById('workflow').value.trim() || '.github/workflows/build.yml';
+  const ref = document.getElementById('ref').value.trim() || 'main';
+  const token = document.getElementById('token').value.trim();
+
+  if (!owner || !repo || !token) {
+    out('Owner, repo, and token are required.');
+    return;
+  }
+
+  const inputs = gatherInputs();
+  refreshPreview();
+
+  const url = `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${encodeURIComponent(workflow)}/dispatches`;
+  try {
+    out('Dispatching workflow…');
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/vnd.github+json',
+        'Authorization': 'Bearer ' + token,
+        'X-GitHub-Api-Version': '2022-11-28',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ ref, inputs })
+    });
+    if (!r.ok) {
+      const txt = await r.text();
+      out(`Error ${r.status}: ${txt}`);
+      return;
+    }
+    out('Build started! Open the Actions tab of your repo to watch progress.');
+  } catch (e) {
+    out('Dispatch failed: ' + (e && e.message ? e.message : e));
+  }
+}
+
+document.getElementById('buildBtn').addEventListener('click', dispatch);
+document.getElementById('build_type').addEventListener('change', ()=>{ updateTargetBits(); refreshPreview(); });
+document.getElementById('cpu_bitrate').addEventListener('change', ()=>{ updateTargetBits(); refreshPreview(); });
+
+loadPresets().then(()=>{}).catch(e=>{ out('Could not load presets: ' + e.message); });
+</script>
 </body>
 </html>
