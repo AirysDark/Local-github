@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Local-github Config (Safe, Dynamic from config/options.json)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root { --bg:#0b0f14; --card:#121821; --muted:#a6b3c2; --text:#e8eef6; --accent:#5cc8ff; }
+  body { margin:0; font-family:system-ui,Segoe UI,Roboto,Arial; background:var(--bg); color:var(--text); }
+  .wrap { max-width:1100px; margin:24px auto; padding:0 16px; }
+  .row { display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
+  .card { background:var(--card); border:1px solid #1f2733; border-radius:12px; padding:16px; }
+  label { font-size:12px; color:var(--muted); display:block; margin-top:8px; }
+  input, select, textarea, button { width:100%; box-sizing:border-box; padding:10px; border-radius:8px; border:1px solid #2a3342; background:#0e141c; color:#e8eef6; }
+  small { color:var(--muted); }
+  button { margin-top:12px; background:var(--accent); color:#001019; border:none; font-weight:600; cursor:pointer; }
+  .out { white-space:pre-wrap; background:#0e141c; padding:12px; border-radius:8px; border:1px solid #2a3342; min-height:80px; }
+  .two { display:grid; grid-template-columns: 1fr 1fr; gap:8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="row">
+    <div class="card">
+      <label>Owner</label>
+      <input id="owner" placeholder="e.g. AirysDark">
+      <label>Repo</label>
+      <input id="repo" placeholder="e.g. Local-github">
+      <label>Workflow file path</label>
+      <input id="workflow" value=".github/workflows/build.yml">
+      <label>Ref/branch</label>
+      <input id="ref" value="main">
+      <small>This page never sends the request. It only prints the JSON + a curl command you can run locally.</small>
+    </div>
+
+    <div class="card">
+      <div class="two">
+        <div>
+          <label>Build type</label>
+          <select id="build_type">
+            <option value="pi" selected>pi</option>
+            <option value="pc">pc (reserved)</option>
+          </select>
+        </div>
+        <div>
+          <label>CPU bitrate</label>
+          <select id="cpu_bitrate">
+            <option value="64bit" selected>64bit</option>
+            <option value="32bit">32bit</option>
+          </select>
+        </div>
+      </div>
+      <label>target_bits</label>
+      <input id="target_bits" value="auto" readonly>
+      <small>Computed from Build type + CPU bitrate; shows "auto" here.</small>
+    </div>
+  </div>
+
+  <div class="row" style="margin-top:16px">
+    <div class="card">
+      <label>Console username</label>
+      <input id="user_name" placeholder="e.g. AirysDark">
+      <label>Console password</label>
+      <input id="user_password" type="password" placeholder="e.g. Zombie1986X2">
+
+      <label style="margin-top:14px;">Wi‑Fi SSID</label>
+      <input id="wifi_ssid" placeholder="e.g. Raspbain">
+      <label>Wi‑Fi password</label>
+      <input id="wifi_password" type="password" placeholder="e.g. YourWiFiPassword">
+    </div>
+
+    <div class="card">
+      <label>PermitRootLogin</label>
+      <input id="ssh_prl" placeholder="e.g. yes">
+      <small><code>yes</code>=allow root; <code>prohibit-password</code>=keys only; <code>no</code>=disable</small>
+      <label>PasswordAuthentication</label>
+      <input id="ssh_pa" placeholder="e.g. yes">
+      <label>PubkeyAuthentication</label>
+      <input id="ssh_pk" placeholder="e.g. yes">
+    </div>
+  </div>
+
+  <div class="row" style="margin-top:16px">
+    <div class="card">
+      <div class="two">
+        <div>
+          <label>Static IPv4</label>
+          <input id="static_ip" placeholder="e.g. 192.168.0.8">
+        </div>
+        <div>
+          <label>Gateway IPv4</label>
+          <input id="gateway" placeholder="e.g. 192.168.0.1">
+        </div>
+      </div>
+      <label>DNS servers</label>
+      <input id="dns" placeholder="e.g. 1.1.1.1;8.8.8.8">
+    </div>
+
+    <div class="card">
+      <label>Wi‑Fi country</label>
+      <select id="wifi_country"></select>
+      <label>Timezone</label>
+      <select id="timezone"></select>
+      <label>Keyboard layout</label>
+      <select id="keyboard" onchange="toggleKeyboardCustom()"></select>
+      <label>Custom layout (only if &quot;custom&quot;)</label>
+      <input id="keyboard_custom" placeholder="e.g. us,intl" style="display:none">
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <button id="buildBtn">Show build payload</button>
+    <div style="margin-top:8px;">
+      <label>Personal Access Token (optional — inserted into the curl below only)</label>
+      <input id="token" type="password" placeholder="ghp_xxx (NOT sent by this page)">
+    </div>
+
+    <h3 style="margin-top:16px">workflow_dispatch JSON</h3>
+    <div id="jsonOut" class="out">Click “Show build payload”.</div>
+
+    <h3 style="margin-top:16px">curl command (copy & run locally)</h3>
+    <div id="curlOut" class="out">—</div>
+
+    <h3 style="margin-top:16px">Repo details used</h3>
+    <div id="repoOut" class="out">—</div>
+  </div>
+
+</div>
+
+<script>
+function targetBitsComputed() {
+  return document.getElementById('build_type').value + ' ' + document.getElementById('cpu_bitrate').value;
+}
+
+function toggleKeyboardCustom(){
+  const kb = document.getElementById('keyboard').value;
+  document.getElementById('keyboard_custom').style.display = (kb === 'custom') ? 'block' : 'none';
+}
+
+function gatherInputs() {
+  return {
+    target_bits: targetBitsComputed(),
+    user_name: document.getElementById('user_name').value,
+    user_password: document.getElementById('user_password').value,
+    wifi_ssid: document.getElementById('wifi_ssid').value,
+    wifi_password: document.getElementById('wifi_password').value,
+    ssh_permit_root_login: document.getElementById('ssh_prl').value,
+    ssh_password_auth: document.getElementById('ssh_pa').value,
+    ssh_pubkey_auth: document.getElementById('ssh_pk').value,
+    static_ip: document.getElementById('static_ip').value,
+    gateway: document.getElementById('gateway').value,
+    dns: document.getElementById('dns').value,
+    wifi_country: document.getElementById('wifi_country').value,
+    timezone: document.getElementById('timezone').value,
+    keyboard: document.getElementById('keyboard').value,
+    keyboard_custom: document.getElementById('keyboard_custom').value
+  };
+}
+
+function showPayload() {
+  const owner = (document.getElementById('owner').value || '').trim();
+  const repo  = (document.getElementById('repo').value  || '').trim();
+  const wf    = (document.getElementById('workflow').value || '.github/workflows/build.yml').trim();
+  const ref   = (document.getElementById('ref').value || 'main').trim();
+  const token = (document.getElementById('token').value || '').trim();
+
+  if (!owner || !repo) {
+    document.getElementById('jsonOut').textContent = 'Owner and repo are required.';
+    document.getElementById('curlOut').textContent = '—';
+    document.getElementById('repoOut').textContent = '—';
+    return;
+  }
+
+  const body = { ref, inputs: gatherInputs() };
+  const url = `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${encodeURIComponent(wf)}/dispatches`;
+
+  document.getElementById('jsonOut').textContent = JSON.stringify(body, null, 2);
+  document.getElementById('repoOut').textContent = JSON.stringify({ url, owner, repo, workflow: wf, ref }, null, 2);
+
+  const authHeader = token ? `  -H "Authorization: Bearer ${token}" \\` : '  # -H "Authorization: Bearer <TOKEN>" \\' ;
+  const curl = [
+    'curl -s -X POST \\',
+    '  -H "Accept: application/vnd.github+json" \\',
+    '  -H "X-GitHub-Api-Version: 2022-11-28" \\',
+    authHeader,
+    `  https://api.github.com/repos/${owner}/${repo}/actions/workflows/${encodeURIComponent(wf)}/dispatches \\`,
+    "  -d '" + JSON.stringify(body).replace(/'/g, "'"'"'") + "'"
+  ].join("\n");
+  document.getElementById('curlOut').textContent = curl;
+}
+
+async function loadOptions() {
+  const urls = ['config/options.json', './config/options.json', '/config/options.json'];
+  let js = null;
+  for (const u of urls) {
+    try {
+      const r = await fetch(u, {cache:'no-store'});
+      if (r.ok) { js = await r.json(); break; }
+    } catch (e) {}
+  }
+  if (!js) {
+    document.getElementById('jsonOut').textContent = 'Could not load config/options.json';
+    return;
+  }
+
+  // normalize keys (support multiple schema variants)
+  const countries = js.wifi_countries || js.country || [];
+  const timezones = js.timezones || js.tz || [];
+  const keyboards = js.keyboards || js.kbd || [];
+
+  const fill = (id, arr, placeholder) => {
+    const el = document.getElementById(id);
+    el.innerHTML = "";
+    const o0 = document.createElement('option');
+    o0.value = ""; o0.textContent = placeholder;
+    el.appendChild(o0);
+    arr.forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v; el.appendChild(o); });
+  };
+
+  fill('wifi_country', countries, '(Wi‑Fi country)');
+  fill('timezone', timezones, '(Timezone)');
+  fill('keyboard', keyboards, '(Keyboard)');
+}
+
+document.getElementById('buildBtn').addEventListener('click', function(e){
+  e.preventDefault();
+  document.getElementById('target_bits').value = 'auto'; // keep visible as "auto"
+  showPayload();
+});
+
+loadOptions();
+</script>
+</body>
+</html>
