@@ -1,0 +1,90 @@
+{
+  "users": [
+    {
+      "name": "User",
+      "password": "password"
+    },
+    {
+      "name": "AirysDark",
+      "password": "Zombie1986X2"
+    },
+    {
+      "name": "chip",
+      "password": "raspberry"
+    }
+  ],
+  "wifi": [
+    {
+      "ssid": "WI-FI SSID",
+      "password": "password"
+    },
+    {
+      "ssid": "Raspbain",
+      "password": "Zombie1986X2"
+    },
+    {
+      "ssid": "YourWiFi",
+      "password": "YourPassword"
+    }
+  ],
+  "ssh": [
+    {
+      "permit_root_login": "yes",
+      "password_auth": "yes",
+      "pubkey_auth": "yes",
+      "label": "true:true:true"
+    },
+    {
+      "permit_root_login": "prohibit-password",
+      "password_auth": "yes",
+      "pubkey_auth": "yes",
+      "label": "prohibit-password:true:true"
+    },
+    {
+      "permit_root_login": "no",
+      "password_auth": "yes",
+      "pubkey_auth": "yes",
+      "label": "false:true:true"
+    }
+  ],
+  "net_ipv4": [
+    {
+      "ip": "192.168.0.8",
+      "gateway": "192.168.0.1",
+      "dns": "1.1.1.1;8.8.8.8"
+    },
+    {
+      "ip": "192.168.1.50",
+      "gateway": "192.168.1.1",
+      "dns": "1.1.1.1;8.8.8.8"
+    },
+    {
+      "ip": "10.0.0.50",
+      "gateway": "10.0.0.1",
+      "dns": "9.9.9.9;1.1.1.1"
+    }
+  ],
+  "wifi_countries": [
+    "AU",
+    "US",
+    "GB",
+    "DE",
+    "FR",
+    "JP"
+  ],
+  "timezones": [
+    "Australia/Sydney",
+    "UTC",
+    "US/Pacific",
+    "Europe/London",
+    "Asia/Tokyo"
+  ],
+  "keyboards": [
+    "us",
+    "gb",
+    "au",
+    "de",
+    "fr",
+    "custom"
+  ]
+}
