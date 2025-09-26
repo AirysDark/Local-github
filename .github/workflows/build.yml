@@ -6,7 +6,9 @@ on:
       target_bits:
         type: choice
         description: "Build target + bitness"
-        options: [ "pi 64bit", "pi 32bit" ]
+        options:
+          - "pi 64bit"
+          - "pi 32bit"
         default: "pi 64bit"
 
       user_creds:
@@ -77,7 +79,7 @@ jobs:
           echo "target=$TARGET" >> "$GITHUB_OUTPUT"
           echo "bit_type=$BIT"  >> "$GITHUB_OUTPUT"
 
-      - name: Compute Pi arch from bitness
+      - name: Compute Pi arch
         id: arch
         shell: bash
         run: |
@@ -87,7 +89,7 @@ jobs:
           if [ "$BIT" = "32bit" ]; then PI="armhf"; fi
           echo "pi=$PI" >> "$GITHUB_OUTPUT"
 
-      - name: Parse paired credentials
+      - name: Parse console + Wi-Fi creds
         id: creds
         shell: bash
         run: |
@@ -117,7 +119,7 @@ jobs:
           echo "gateway=$GW"   >> "$GITHUB_OUTPUT"
           echo "dns=$DNS"      >> "$GITHUB_OUTPUT"
 
-      - name: Parse SSH options (PermitRootLogin:PasswordAuth:PubkeyAuth)
+      - name: Parse SSH options
         id: ssh
         shell: bash
         run: |
@@ -136,7 +138,7 @@ jobs:
           echo "password_auth=$PA"       >> "$GITHUB_OUTPUT"
           echo "pubkey_auth=$PK"         >> "$GITHUB_OUTPUT"
 
-      - name: Prepare overlay files
+      - name: Prepare overlays (Pi only)
         if: ${{ steps.tgt.outputs.target == 'pi' }}
         shell: bash
         env:
@@ -156,17 +158,17 @@ jobs:
         run: |
           set -e
           BASE="pi-gen/stage4/05-local-github"
-          mkdir -p "$BASE/files/etc/ssh/sshd_config.d"
-          mkdir -p "$BASE/files/etc/wpa_supplicant"
-          mkdir -p "$BASE/files/etc/default"
-          mkdir -p "$BASE/files/etc"
-          mkdir -p "$BASE/files/etc/dhcpcd.conf.d"
+          mkdir -p "$BASE/files/etc/ssh/sshd_config.d" \
+                   "$BASE/files/etc/wpa_supplicant" \
+                   "$BASE/files/etc/default" \
+                   "$BASE/files/etc" \
+                   "$BASE/files/etc/dhcpcd.conf.d"
 
-          cat > "$BASE/files/etc/ssh/sshd_config.d/local-github.conf" <<EOF
-PermitRootLogin ${PERMIT_ROOT_LOGIN}
-PasswordAuthentication ${PASSWORD_AUTH}
-PubkeyAuthentication ${PUBKEY_AUTH}
-EOF
+          printf '%s\n' \
+"PermitRootLogin ${PERMIT_ROOT_LOGIN}" \
+"PasswordAuthentication ${PASSWORD_AUTH}" \
+"PubkeyAuthentication ${PUBKEY_AUTH}" \
+          > "$BASE/files/etc/ssh/sshd_config.d/local-github.conf"
 
           cat > "$BASE/files/etc/wpa_supplicant/wpa_supplicant.conf" <<EOF
 ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
@@ -199,7 +201,7 @@ fi
 EOS
           chmod +x "$BASE/00-run.sh"
 
-      - name: Build Raspberry Pi image (pi-gen-action)
+      - name: Build Raspberry Pi image
         if: ${{ steps.tgt.outputs.target == 'pi' }}
         uses: usimd/pi-gen-action@v1
         with:
@@ -211,9 +213,9 @@ EOS
           deploy_compression_level: 9
           deploy_zip: true
 
-      - name: Upload Pi artifact
+      - name: Upload artifact
         if: ${{ steps.tgt.outputs.target == 'pi' }}
         uses: actions/upload-artifact@v4
         with:
           name: "Local-github-pi"
-          path: deploy/*
+          path: deploy/**
