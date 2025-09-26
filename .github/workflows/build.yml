@@ -1,4 +1,4 @@
-name: Build Local-github (COMPLETE)
+name: Build Local-github (NET-combined)
 
 on:
   workflow_dispatch:
@@ -53,6 +53,16 @@ on:
           - false:false:true
           - true:true:false
         default: true:true:true
+
+      net_ipv4:
+        type: choice
+        description: "Static IPv4:Gateway:DNS(semicolon-separated)"
+        options:
+          - 192.168.0.8:192.168.0.1:1.1.1.1;8.8.8.8
+          - 192.168.1.50:192.168.1.1:1.1.1.1;8.8.8.8
+          - 10.0.0.50:10.0.0.1:9.9.9.9;1.1.1.1
+          - 172.16.0.50:172.16.0.1:8.8.8.8;8.8.4.4
+        default: 192.168.0.8:192.168.0.1:1.1.1.1;8.8.8.8
       # =================================
 
       hostname:
@@ -971,22 +981,8 @@ on:
           - workman
           - neo
           - bepo
-          - custom
         default: au
 
-      keyboard_custom:
-        description: "If keyboard=custom, set layout here (e.g., us,intl)"
-        default: us
-
-      static_ip:
-        description: "Static IPv4 (eth0)"
-        default: 192.168.1.50
-      gateway:
-        description: "Gateway IPv4"
-        default: 192.168.1.1
-      dns:
-        description: "DNS servers (semicolon-separated)"
-        default: 1.1.1.1;8.8.8.8
 
 jobs:
   build:
@@ -1027,14 +1023,28 @@ jobs:
           echo "wifi_ssid=$WIFI_SSID"          >> "$GITHUB_OUTPUT"
           echo "wifi_password=$WIFI_PASSWORD"  >> "$GITHUB_OUTPUT"
 
+      - name: Parse static IPv4 tuple
+        id: net
+        shell: bash
+        run: |
+          set -e
+          TUPLE='${{ github.event.inputs.net_ipv4 }}'
+          IP="${TUPLE%%:*}"
+          REST="${TUPLE#*:}"
+          GW="${REST%%:*}"
+          DNS="${REST#*:}"
+          echo "static_ip=$IP"    >> "$GITHUB_OUTPUT"
+          echo "gateway=$GW"      >> "$GITHUB_OUTPUT"
+          echo "dns=$DNS"         >> "$GITHUB_OUTPUT"
+          echo "Parsed net: ip=$IP gw=$GW dns=$DNS"
+
       - name: Parse SSH options (PermitRootLogin:PasswordAuth:PubkeyAuth)
         id: ssh
         shell: bash
         run: |
           set -e
           OPT='${{ github.event.inputs.ssh_options }}'
-          IFS=":" read -r PERMIT_ROOT PASSAUTH PUBKEY <<<"$OPT"
-
+          IFS=':' read -r PERMIT_ROOT PASSAUTH PUBKEY <<<"$OPT"
           case "$PERMIT_ROOT" in
             true|yes|on) PRL="yes" ;;
             prohibit-password|prohibit_password|prohibit) PRL="prohibit-password" ;;
@@ -1043,7 +1053,6 @@ jobs:
           esac
           case "$PASSAUTH" in true|yes|on) PA="yes" ;; false|no|off) PA="no" ;; *) PA="$PASSAUTH" ;; esac
           case "$PUBKEY"   in true|yes|on) PK="yes" ;; false|no|off) PK="no" ;; *) PK="$PUBKEY"   ;; esac
-
           echo "permit_root_login=$PRL"  >> "$GITHUB_OUTPUT"
           echo "password_auth=$PA"       >> "$GITHUB_OUTPUT"
           echo "pubkey_auth=$PK"         >> "$GITHUB_OUTPUT"
@@ -1056,10 +1065,9 @@ jobs:
           WIFI_COUNTRY:       ${{ github.event.inputs.wifi_country }}
           TIMEZONE:           ${{ github.event.inputs.timezone }}
           KEYBOARD:           ${{ github.event.inputs.keyboard }}
-          KEYBOARD_CUSTOM:    ${{ github.event.inputs.keyboard_custom }}
-          STATIC_IP:          ${{ github.event.inputs.static_ip }}
-          GATEWAY:            ${{ github.event.inputs.gateway }}
-          DNS:                ${{ github.event.inputs.dns }}
+          STATIC_IP:          ${{ steps.net.outputs.static_ip }}
+          GATEWAY:            ${{ steps.net.outputs.gateway }}
+          DNS:                ${{ steps.net.outputs.dns }}
           PERMIT_ROOT_LOGIN:  ${{ steps.ssh.outputs.permit_root_login }}
           PASSWORD_AUTH:      ${{ steps.ssh.outputs.password_auth }}
           PUBKEY_AUTH:        ${{ steps.ssh.outputs.pubkey_auth }}
@@ -1073,9 +1081,6 @@ jobs:
           rsync -a shared/ targets/live-build/config/includes.chroot/tmp/payload/ || true
           rsync -a shared/ targets/pi-gen/stage4/05-chip-base/files/ || true
 
-          KB="${{ github.event.inputs.keyboard }}"
-          if [ "$KB" = "custom" ]; then KB="${{ github.event.inputs.keyboard_custom }}"; fi
-
           set +e
           grep -RIl "__HOSTNAME__\|__USERNAME__\|__USERPASS__\|__WIFI_SSID__\|__WIFI_PASSWORD__\|__WIFI_COUNTRY__\|__TIMEZONE__\|__KEYBOARD__\|__STATIC_IP__\|__GATEWAY__\|__DNS__\|__PERMIT_ROOT_LOGIN__\|__PASSWORD_AUTH__\|__PUBKEY_AUTH__" ./ \
             | xargs -r sed -i \
@@ -1086,7 +1091,7 @@ jobs:
               -e "s/__WIFI_PASSWORD__/${WIFI_PASSWORD}/g" \
               -e "s/__WIFI_COUNTRY__/${WIFI_COUNTRY}/g" \
               -e "s#__TIMEZONE__#${TIMEZONE}#g" \
-              -e "s/__KEYBOARD__/${KB}/g" \
+              -e "s/__KEYBOARD__/${KEYBOARD}/g" \
               -e "s/__STATIC_IP__/${STATIC_IP}/g" \
               -e "s/__GATEWAY__/${GATEWAY}/g" \
               -e "s/__DNS__/${DNS}/g" \
@@ -1106,7 +1111,7 @@ jobs:
           deploy_compression: xz
           deploy_compression_level: 9
           deploy_zip: true
-          # architecture: ${{ steps.arch.outputs.pi }}  # uncomment if action supports arch input
+          # architecture: ${{ steps.arch.outputs.pi }}
 
       - name: Upload Pi artifact
         if: ${{ github.event.inputs.target == 'pi' }}
@@ -1123,8 +1128,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y live-build debootstrap syslinux isolinux
           cd targets/live-build
-          lb config --architecture ${{ steps.arch.outputs.pc }} --distribution bookworm --mode debian \
-            --binary-images iso-hybrid --debian-installer live --apt-recommends false
+          lb config --architecture ${{ steps.arch.outputs.pc }} --distribution bookworm --mode debian             --binary-images iso-hybrid --debian-installer live --apt-recommends false
           sudo lb build
 
       - name: Upload PC artifact
