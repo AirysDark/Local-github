@@ -1,95 +1,243 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Local-github Builder</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 2em; }
-    label { display:block; margin-top:1em; }
-    select, input { width: 300px; padding:4px; }
-    pre { background:#eee; padding:1em; white-space:pre-wrap; }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Local-github Builder</title>
+<style>
+  :root{
+    --bg:#0b1118; --panel:#0f1622; --panel-2:#121c2a; --ink:#e6eef8; --muted:#97a8be;
+    --brand:#55c2ff; --ok:#67e8a6; --warn:#ffd166; --line:#1a2636; --chip:#0d2136;
+    --ring: 0 0 0 2px rgba(85,194,255,.25),0 0 0 6px rgba(85,194,255,.08);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family: ui-sans-serif,system-ui,Segoe UI,Roboto,Inter,Arial;
+    color:var(--ink); background:radial-gradient(1200px 700px at 80% -10%,#0e1a2b,transparent),
+                       radial-gradient(900px 500px at -10% 120%,#0e2338,transparent),
+                       var(--bg);
+  }
+  .wrap{max-width:1100px; margin:28px auto; padding:0 18px;}
+  .hero{
+    display:flex; align-items:center; justify-content:space-between; gap:16px;
+    background:linear-gradient(180deg,rgba(85,194,255,.08),transparent),var(--panel);
+    border:1px solid var(--line); border-radius:16px; padding:18px 18px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.03), 0 10px 30px rgba(0,0,0,.25);
+  }
+  .title{display:flex; align-items:center; gap:12px}
+  .logo{
+    width:40px; height:40px; border-radius:12px; display:grid; place-items:center;
+    background:conic-gradient(from 210deg,#1a6ea7,#55c2ff,#1a6ea7);
+    box-shadow:0 6px 18px rgba(85,194,255,.25),inset 0 0 10px rgba(255,255,255,.08);
+  }
+  .title h1{margin:0; font-weight:700; letter-spacing:.2px}
+  .sub{margin:4px 0 0 0; color:var(--muted); font-size:13px}
+  .grid{display:grid; gap:16px; grid-template-columns: 1fr 1fr}
+  @media (max-width:920px){ .grid{grid-template-columns:1fr} }
+  .card{
+    background:linear-gradient(180deg,rgba(255,255,255,.02),transparent),var(--panel);
+    border:1px solid var(--line); border-radius:16px; padding:16px;
+    box-shadow:0 10px 30px rgba(0,0,0,.25);
+  }
+  .card h3{margin:0 0 6px 0; font-size:16px; letter-spacing:.2px}
+  .hint{color:var(--muted); font-size:12px; margin-top:6px}
+  label{display:block; font-size:12px; color:var(--muted); margin:10px 0 6px}
+  input,select{
+    width:100%; background:var(--panel-2); color:var(--ink);
+    border:1px solid var(--line); border-radius:10px; padding:10px 12px;
+    outline:none; transition:.2s border-color, .2s box-shadow;
+  }
+  input:focus,select:focus{ border-color:var(--brand); box-shadow:var(--ring); }
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+  @media (max-width:620px){ .row2{grid-template-columns:1fr} }
+  .btn{
+    display:inline-flex; align-items:center; gap:10px; cursor:pointer;
+    background:linear-gradient(180deg,#62d1ff,#55c2ff);
+    color:#042032; border:0; border-radius:12px; padding:12px 14px; font-weight:700;
+    box-shadow:0 10px 26px rgba(85,194,255,.35), inset 0 1px 0 rgba(255,255,255,.25);
+  }
+  .btn:hover{filter:brightness(1.05)}
+  .btn:active{transform:translateY(1px)}
+  .out{
+    background:var(--panel-2); border:1px solid var(--line); border-radius:12px;
+    padding:12px; white-space:pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    min-height:90px;
+  }
+  .chips{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
+  .chip{
+    font-size:12px; padding:6px 8px; border-radius:999px; background:var(--chip);
+    border:1px solid var(--line); color:var(--muted);
+  }
+  .kbd{background:#0e2135; border:1px solid #1c314a; padding:2px 6px; border-radius:6px}
+  .inline{display:inline-flex; align-items:center; gap:8px}
+  .footer-note{color:var(--muted); font-size:12px; margin-top:6px}
+</style>
 </head>
 <body>
-<h1>Local-github Builder</h1>
+  <div class="wrap">
+    <div class="hero">
+      <div class="title">
+        <div class="logo" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="#001420">
+            <path d="M13 3a9 9 0 1 0 8.485 6H19a7 7 0 1 1-2.05-4.95L15 6h6V0l-2.293 2.293A8.962 8.962 0 0 0 13 3z"/>
+          </svg>
+        </div>
+        <div>
+          <h1>Local-github Builder</h1>
+          <div class="sub">No SSH/static-IP presets. Dynamic dropdowns from <span class="kbd">config/options.json</span>.</div>
+        </div>
+      </div>
+      <div class="chips">
+        <span class="chip">Raspberry Pi</span>
+        <span class="chip">Headless</span>
+        <span class="chip">Workflow Dispatch</span>
+      </div>
+    </div>
 
-<form id="builderForm">
-  <h2>Build Target</h2>
-  <label>Build type:
-    <select id="build_type">
-      <option value="pi">pi</option>
-    </select>
-  </label>
-  <label>CPU bitrate:
-    <select id="cpu_bitrate">
-      <option value="64bit">64bit</option>
-      <option value="32bit">32bit</option>
-    </select>
-  </label>
+    <!-- Build target + User -->
+    <div class="grid" style="margin-top:16px">
+      <div class="card">
+        <h3>Build target</h3>
+        <div class="row2">
+          <div>
+            <label>Build type</label>
+            <select id="build_type">
+              <option value="pi" selected>pi</option>
+              <option value="pc">pc (reserved)</option>
+            </select>
+          </div>
+          <div>
+            <label>CPU bitrate</label>
+            <select id="cpu_bitrate">
+              <option value="64bit" selected>64bit</option>
+              <option value="32bit">32bit</option>
+            </select>
+          </div>
+        </div>
+        <div class="hint">`target_bits` is computed from these and sent as <span class="kbd">"pi 64bit"</span> / <span class="kbd">"pi 32bit"</span>. The visible field stays “auto”.</div>
+      </div>
 
-  <h2>User</h2>
-  <label>User preset: <select id="user_preset"></select></label>
-  <label>Username: <input type="text" id="user_name"></label>
-  <label>Password: <input type="password" id="user_password"></label>
+      <div class="card">
+        <h3>User</h3>
+        <label>Preset user</label>
+        <select id="user_preset"></select>
+        <label>Console username</label>
+        <input id="user_name" placeholder="e.g. AirysDark" />
+        <label>Console password</label>
+        <input id="user_password" type="password" placeholder="e.g. ••••••••" />
+        <div class="hint">Picking a preset fills these inputs — you can still edit them.</div>
+      </div>
+    </div>
 
-  <h2>Wi-Fi</h2>
-  <label>Wi-Fi preset: <select id="wifi_preset"></select></label>
-  <label>SSID: <input type="text" id="wifi_ssid"></label>
-  <label>Password: <input type="password" id="wifi_password"></label>
+    <!-- Wi-Fi + SSH -->
+    <div class="grid" style="margin-top:16px">
+      <div class="card">
+        <h3>Wi-Fi</h3>
+        <label>Preset Wi-Fi</label>
+        <select id="wifi_preset"></select>
+        <label>Wi-Fi SSID</label>
+        <input id="wifi_ssid" placeholder="e.g. Raspbain" />
+        <label>Wi-Fi password</label>
+        <input id="wifi_password" type="password" placeholder="e.g. ••••••••" />
+      </div>
 
-  <h2>SSH</h2>
-  <label>Permit root login:
-    <select id="ssh_prl">
-      <option value="yes">yes</option>
-      <option value="no">no</option>
-      <option value="prohibit-password">prohibit-password</option>
-    </select>
-  </label>
-  <label>Password authentication:
-    <select id="ssh_pa">
-      <option value="yes">yes</option>
-      <option value="no">no</option>
-    </select>
-  </label>
-  <label>Pubkey authentication:
-    <select id="ssh_pk">
-      <option value="yes">yes</option>
-      <option value="no">no</option>
-    </select>
-  </label>
+      <div class="card">
+        <h3>SSH</h3>
+        <div class="inline">
+          <span class="hint">Use <code class="kbd">yes</code>, <code class="kbd">no</code>, or <code class="kbd">prohibit-password</code>.</span>
+        </div>
+        <label>PermitRootLogin</label>
+        <select id="ssh_prl">
+          <option value="yes">yes</option>
+          <option value="no">no</option>
+          <option value="prohibit-password">prohibit-password</option>
+        </select>
 
-  <h2>Network</h2>
-  <label>Static IPv4: <input type="text" id="static_ip" placeholder="192.168.0.8"></label>
-  <label>Gateway: <input type="text" id="gateway" placeholder="192.168.0.1"></label>
-  <label>DNS servers: <input type="text" id="dns" placeholder="1.1.1.1;8.8.8.8"></label>
+        <label>PasswordAuthentication</label>
+        <select id="ssh_pa">
+          <option value="yes">yes</option>
+          <option value="no">no</option>
+        </select>
 
-  <h2>Region & Locale</h2>
-  <label>Wi-Fi country: <select id="wifi_country"></select></label>
-  <label>Timezone: <select id="timezone"></select></label>
-  <label>Keyboard layout: <select id="keyboard" onchange="toggleKeyboardCustom()"></select></label>
-  <label id="keyboard_custom_label" style="display:none">Custom keyboard:
-    <input type="text" id="keyboard_custom" placeholder="us,intl">
-  </label>
+        <label>PubkeyAuthentication</label>
+        <select id="ssh_pk">
+          <option value="yes">yes</option>
+          <option value="no">no</option>
+        </select>
+      </div>
+    </div>
 
-  <br><br>
-  <button id="buildBtn">Start Build</button>
-</form>
+    <!-- Network + Region -->
+    <div class="grid" style="margin-top:16px">
+      <div class="card">
+        <h3>Network</h3>
+        <div class="row2">
+          <div>
+            <label>Static IPv4</label>
+            <input id="static_ip" placeholder="192.168.0.8" />
+          </div>
+          <div>
+            <label>Gateway IPv4</label>
+            <input id="gateway" placeholder="192.168.0.1" />
+          </div>
+        </div>
+        <label>DNS servers</label>
+        <input id="dns" placeholder="1.1.1.1;8.8.8.8" />
+      </div>
 
-<h2>Workflow Dispatch JSON</h2>
-<pre id="jsonOut"></pre>
+      <div class="card">
+        <h3>Region &amp; Locale</h3>
+        <label>Wi-Fi country</label>
+        <select id="wifi_country"></select>
 
-<h2>cURL Command</h2>
-<pre id="curlOut"></pre>
+        <label>Timezone</label>
+        <select id="timezone"></select>
+
+        <label>Keyboard layout</label>
+        <select id="keyboard" onchange="toggleKeyboardCustom()"></select>
+
+        <label id="kb_custom_label" style="display:none">Custom layout
+          <input id="keyboard_custom" placeholder="e.g. us,intl" />
+        </label>
+      </div>
+    </div>
+
+    <!-- Build -->
+    <div class="card" style="margin-top:16px">
+      <div class="row2">
+        <div>
+          <button class="btn" id="buildBtn" type="button">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="#012233" aria-hidden="true"><path d="M13 3a9 9 0 1 0 8.485 6H19a7 7 0 1 1-2.05-4.95L15 6h6V0l-2.293 2.293A8.962 8.962 0 0 0 13 3z"/></svg>
+            Show build payload
+          </button>
+          <div class="footer-note">This page <strong>does not send</strong> anything. Copy the curl and run it locally.</div>
+        </div>
+        <div>
+          <label>Personal Access Token (optional; only inserted into the curl shown below)</label>
+          <input id="token" type="password" placeholder="ghp_… (NOT sent by this page)"/>
+        </div>
+      </div>
+
+      <h3 style="margin-top:16px">workflow_dispatch JSON</h3>
+      <div id="jsonOut" class="out">Click “Show build payload”.</div>
+
+      <h3 style="margin-top:16px">curl command (copy &amp; run locally)</h3>
+      <div id="curlOut" class="out">—</div>
+
+      <h3 style="margin-top:16px">Endpoint</h3>
+      <div id="repoOut" class="out">Set this in your terminal: OWNER, REPO, and workflow path</div>
+    </div>
+  </div>
 
 <script>
-function targetBitsComputed() {
+function targetBitsComputed(){
   return document.getElementById('build_type').value + ' ' + document.getElementById('cpu_bitrate').value;
 }
 function toggleKeyboardCustom(){
-  const kb = document.getElementById('keyboard').value;
-  document.getElementById('keyboard_custom_label').style.display = (kb === 'custom') ? 'block' : 'none';
+  const val = document.getElementById('keyboard').value;
+  document.getElementById('kb_custom_label').style.display = (val === 'custom') ? 'block' : 'none';
 }
-function gatherInputs() {
+function gatherInputs(){
   return {
     target_bits: targetBitsComputed(),
     user_name: document.getElementById('user_name').value,
@@ -108,34 +256,43 @@ function gatherInputs() {
     keyboard_custom: document.getElementById('keyboard_custom').value
   };
 }
-function showPayload() {
-  const body = { ref: "main", inputs: gatherInputs() };
+function showPayload(){
+  const ref = "main";
+  const body = { ref, inputs: gatherInputs() };
+
+  const token = (document.getElementById('token').value || '').trim();
+  const endpoint = `https://api.github.com/repos/OWNER/REPO/actions/workflows/.github/workflows/build.yml/dispatches`;
+
   document.getElementById('jsonOut').textContent = JSON.stringify(body, null, 2);
-  const curl = "curl -s -X POST \\\n" +
-               "  -H 'Accept: application/vnd.github+json' \\\n" +
-               "  -H 'Authorization: Bearer <TOKEN>' \\\n" +
-               "  https://api.github.com/repos/OWNER/REPO/actions/workflows/.github/workflows/build.yml/dispatches \\\n" +
-               "  -d '" + JSON.stringify(body).replace(/'/g,"'\"'\"'") + "'";
+  document.getElementById('repoOut').textContent = endpoint;
+
+  const authHeader = token ? `  -H "Authorization: Bearer ${token}" \\` : '  # -H "Authorization: Bearer <TOKEN>" \\';
+  const curl = [
+    'curl -s -X POST \\',
+    '  -H "Accept: application/vnd.github+json" \\',
+    '  -H "X-GitHub-Api-Version: 2022-11-28" \\',
+     authHeader,
+     '  ' + endpoint + ' \\',
+    "  -d '" + JSON.stringify(body).replace(/'/g,"'\"'\"'") + "'"
+  ].join('\\\n').replace(/\\\\n/g,'\n');
   document.getElementById('curlOut').textContent = curl;
 }
-document.getElementById('buildBtn').addEventListener('click', (e)=>{ e.preventDefault(); showPayload(); });
+document.getElementById('buildBtn').addEventListener('click', showPayload);
 
-function fillSelect(id, arr, labelfn, valuefn, placeholder) {
-  const sel = document.getElementById(id);
-  sel.innerHTML = "";
+function fillSelect(id, arr, labelfn, valuefn, placeholder){
+  const el = document.getElementById(id);
+  el.innerHTML = '';
   const opt0 = document.createElement('option');
-  opt0.value = ""; opt0.textContent = placeholder || "(select)";
-  sel.appendChild(opt0);
-  arr.forEach((it, idx) => {
+  opt0.value = ''; opt0.textContent = placeholder || '(select)';
+  el.appendChild(opt0);
+  arr.forEach((v,i)=>{
     const o = document.createElement('option');
-    const label = labelfn ? labelfn(it, idx) : String(it);
-    const value = valuefn ? valuefn(it, idx) : String(it);
-    o.value = value; o.textContent = label;
-    o.dataset.raw = JSON.stringify(it);
-    sel.appendChild(o);
+    const label = labelfn ? labelfn(v,i) : String(v);
+    const value = valuefn ? valuefn(v,i) : String(v);
+    o.value = value; o.textContent = label; o.dataset.raw = JSON.stringify(v);
+    el.appendChild(o);
   });
 }
-
 function onPresetChange(selId, setter){
   const sel = document.getElementById(selId);
   sel.addEventListener('change', ()=>{
@@ -144,37 +301,37 @@ function onPresetChange(selId, setter){
     try { setter(JSON.parse(opt.dataset.raw)); } catch(e){}
   });
 }
-
 async function loadOptions(){
-  try {
-    const r = await fetch("config/options.json");
-    if(!r.ok) throw new Error("options.json not found");
-    const js = await r.json();
-
-    const countries = js.wifi_countries || js.country || [];
-    const timezones = js.timezones || js.tz || [];
-    const keyboards = js.keyboards || js.kbd || [];
-    fillSelect('wifi_country', countries, v=>v, v=>v, '(Wi-Fi country)');
-    fillSelect('timezone', timezones, v=>v, v=>v, '(Timezone)');
-    fillSelect('keyboard', keyboards, v=>v, v=>v, '(Keyboard)');
-
-    const users = js.users || [];
-    const wifis = js.wifi || [];
-    fillSelect('user_preset', users, u=>u.name, u=>u.name, '(no user preset)');
-    fillSelect('wifi_preset', wifis, w=>w.ssid, w=>w.ssid, '(no Wi-Fi preset)');
-    onPresetChange('user_preset', (u)=>{
-      document.getElementById('user_name').value = u.name || '';
-      document.getElementById('user_password').value = u.password || '';
-    });
-    onPresetChange('wifi_preset', (w)=>{
-      document.getElementById('wifi_ssid').value = w.ssid || '';
-      document.getElementById('wifi_password').value = w.password || '';
-    });
-    if (users.length) { document.getElementById('user_preset').selectedIndex = 1; document.getElementById('user_preset').dispatchEvent(new Event('change')); }
-    if (wifis.length) { document.getElementById('wifi_preset').selectedIndex = 1; document.getElementById('wifi_preset').dispatchEvent(new Event('change')); }
-  } catch(e) {
-    document.getElementById('jsonOut').textContent = 'Could not load config/options.json';
+  const urls = ['config/options.json','./config/options.json','/config/options.json'];
+  let js=null;
+  for (const u of urls){
+    try{ const r=await fetch(u,{cache:'no-store'}); if(r.ok){ js=await r.json(); break; } }catch(e){}
   }
+  if(!js){ document.getElementById('jsonOut').textContent='Could not load config/options.json'; return; }
+
+  const countries = js.wifi_countries || js.country || [];
+  const zones = js.timezones || js.tz || [];
+  const kbs = js.keyboards || js.kbd || [];
+  fillSelect('wifi_country', countries, v=>v, v=>v, '(Wi-Fi country)');
+  fillSelect('timezone', zones, v=>v, v=>v, '(Timezone)');
+  fillSelect('keyboard', kbs, v=>v, v=>v, '(Keyboard)');
+
+  const users = js.users || [];
+  const wifis = js.wifi || [];
+  fillSelect('user_preset', users, u=>u.name, u=>u.name, '(no user preset)');
+  fillSelect('wifi_preset', wifis, w=>w.ssid, w=>w.ssid, '(no Wi-Fi preset)');
+
+  onPresetChange('user_preset', (u)=>{
+    document.getElementById('user_name').value = u.name || '';
+    document.getElementById('user_password').value = u.password || '';
+  });
+  onPresetChange('wifi_preset', (w)=>{
+    document.getElementById('wifi_ssid').value = w.ssid || '';
+    document.getElementById('wifi_password').value = w.password || '';
+  });
+
+  if(users.length){ const s=document.getElementById('user_preset'); s.selectedIndex=1; s.dispatchEvent(new Event('change')); }
+  if(wifis.length){ const s=document.getElementById('wifi_preset'); s.selectedIndex=1; s.dispatchEvent(new Event('change')); }
 }
 loadOptions();
 </script>
