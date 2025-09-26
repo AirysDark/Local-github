@@ -1,9 +1,38 @@
 #!/bin/bash
+set -e
+
+PRL=$(grep -s '^PermitRootLogin' /etc/ssh/sshd_config.d/local-github.conf | awk '{print $2}' || echo "yes")
+PA=$(grep -s '^PasswordAuthentication' /etc/ssh/sshd_config.d/local-github.conf | awk '{print $2}' || echo "yes")
+PK=$(grep -s '^PubkeyAuthentication' /etc/ssh/sshd_config.d/local-github.conf | awk '{print $2}' || echo "yes")
+
 while true; do
-  CHOICE=$(whiptail --title "__HOSTNAME__ Menu" --menu "Choose" 18 60 8     "1" "Shell" "2" "Reboot" "3" "Power off" 3>&1 1>&2 2>&3) || exit 0
+  CHOICE=$(whiptail --title "Local-github Menu" --menu "Choose an action" 18 64 8     "1" "Open shell"     "2" "Reboot"     "3" "Power off"     "i" "Info / About (SSH & Network)" 3>&1 1>&2 2>&3) || exit 0
+
   case "$CHOICE" in
     1) exec bash ;;
     2) sudo systemctl reboot ;;
     3) sudo systemctl poweroff ;;
+    i)
+      MSG=$'SSH settings:\n\n'
+      MSG+=$'• PermitRootLogin — can root log in over SSH?\n'
+      MSG+=$'   - yes: root can log in (password and/or key depending on other flags)\n'
+      MSG+=$'   - prohibit-password: root can log in only with SSH keys (no password)\n'
+      MSG+=$'   - no: root cannot log in via SSH at all\n'
+      MSG+=$"   Current: PermitRootLogin=${PRL}\n\n"
+      MSG+=$'• PasswordAuthentication — allow password-based SSH logins for users.\n'
+      MSG+=$"   Current: PasswordAuthentication=${PA}\n\n"
+      MSG+=$'• PubkeyAuthentication — allow SSH key authentication.\n'
+      MSG+=$"   Current: PubkeyAuthentication=${PK}\n\n"
+
+      IP4=$(hostname -I 2>/dev/null | awk '{print $1}')
+      GW=$(ip route 2>/dev/null | awk '/default/ {print $3; exit}')
+      DNS=$(grep -h ^nameserver /etc/resolv.conf 2>/dev/null | awk '{print $2}' | tr '\n' ' ')
+      MSG+=$'Network:\n'
+      MSG+=$"   IPv4: ${IP4:-unknown}\n"
+      MSG+=$"   Gateway: ${GW:-unknown}\n"
+      MSG+=$"   DNS: ${DNS:-unknown}\n"
+
+      whiptail --title "Info / About" --msgbox "$MSG" 24 80
+      ;;
   esac
 done
