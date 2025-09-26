@@ -1,0 +1,20 @@
+[Unit]
+Description=Chip Console Menu
+After=getty@tty1.service
+Wants=getty@tty1.service
+
+[Service]
+Type=idle
+User=chip
+WorkingDirectory=/home/chip
+Environment=TERM=linux
+TTYPath=/dev/tty1
+StandardInput=tty
+StandardOutput=tty
+StandardError=journal
+ExecStart=/usr/local/bin/chip-menu
+Restart=always
+RestartSec=1
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,9 @@
+#!/bin/bash
+while true; do
+  CHOICE=$(whiptail --title "Chip Menu" --menu "Choose" 18 60 8     "1" "Shell" "2" "Reboot" "3" "Power off" 3>&1 1>&2 2>&3) || exit 0
+  case "$CHOICE" in
+    1) exec bash ;;
+    2) sudo systemctl reboot ;;
+    3) sudo systemctl poweroff ;;
+  esac
+done

@@ -1,0 +1,62 @@
+name: Build Chip OS (Pi or PC)
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "pi or pc"
+        required: false
+        default: "pi"
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [ ${{ github.event.inputs.target || 'pi' }} ]
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Stage shared payload
+        run: |
+          mkdir -p live-build/config/includes.chroot/tmp/payload
+          rsync -a menu/ live-build/config/includes.chroot/tmp/payload/
+
+      - name: Build for Raspberry Pi (arm64)
+        if: matrix.target == 'pi'
+        uses: usimd/pi-gen-action@v1
+        with:
+          release: bookworm
+          image_name: chip-os
+          enable_ssh: true
+          stage_list: "stage0 stage1 stage2 stage4"
+          deploy_compression: xz
+          deploy_compression_level: 9
+          deploy_zip: true
+
+      - name: Upload Pi artifact
+        if: matrix.target == 'pi'
+        uses: actions/upload-artifact@v4
+        with:
+          name: chip-os-pi-arm64
+          path: deploy/*
+
+      - name: Build for PC (x86_64) via live-build
+        if: matrix.target == 'pc'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y live-build debootstrap syslinux isolinux
+          cd live-build
+          lb config --architecture amd64 --distribution bookworm --mode debian             --binary-images iso-hybrid --debian-installer live --apt-recommends false
+          sudo lb build
+
+      - name: Upload PC artifact
+        if: matrix.target == 'pc'
+        uses: actions/upload-artifact@v4
+        with:
+          name: chip-os-pc-amd64
+          path: live-build/live-image-amd64.hybrid.iso
