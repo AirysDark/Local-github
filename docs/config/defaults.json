@@ -1,0 +1,19 @@
+{
+  "build_type": "pi",
+  "cpu_bitrate": "64bit",
+  "target_bits": "pi 64bit",
+  "user_name": "AirysDark",
+  "user_password": "Zombie1986X2",
+  "wifi_ssid": "Raspbain",
+  "wifi_password": "Zombie1986X2",
+  "ssh_permit_root_login": "yes",
+  "ssh_password_auth": "yes",
+  "ssh_pubkey_auth": "yes",
+  "static_ip": "192.168.0.8",
+  "gateway": "192.168.0.1",
+  "dns": "1.1.1.1;8.8.8.8",
+  "wifi_country": "AU",
+  "timezone": "Australia/Sydney",
+  "keyboard": "us",
+  "keyboard_custom": ""
+}
