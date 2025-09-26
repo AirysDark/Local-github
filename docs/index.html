@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Local-github Builder</title>
+  <script>
+    async function startBuild() {
+      const owner = document.getElementById('owner').value;
+      const repo = document.getElementById('repo').value;
+      const token = document.getElementById('token').value;
+      const url = `https://api.github.com/repos/${owner}/${repo}/actions/workflows/build.yml/dispatches`;
+      const resp = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Accept": "application/vnd.github+json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ref:"main"})
+      });
+      alert("Triggered: " + resp.status);
+    }
+  </script>
+</head>
+<body>
+  <h1>Local-github Builder</h1>
+  <p>Enter repository info and trigger workflow:</p>
+  <label>Owner: <input id="owner" value="yourname"/></label><br/>
+  <label>Repo: <input id="repo" value="Local-github"/></label><br/>
+  <label>Token: <input id="token" type="password"/></label><br/>
+  <button onclick="startBuild()">Start build</button>
+</body>
+</html>
