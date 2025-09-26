@@ -1,4 +1,4 @@
-name: Build Local-github (Pi Cleanest)
+name: Build Local-github (Pi Minimal Clean)
 
 on:
   workflow_dispatch:
@@ -89,97 +89,76 @@ jobs:
           if [ "$BIT" = "32bit" ]; then PI="armhf"; fi
           echo "pi=$PI" >> "$GITHUB_OUTPUT"
 
-      - name: Parse console + Wi-Fi creds
-        id: creds
+      - name: Parse creds + network + SSH
+        id: cfg
         shell: bash
         run: |
           set -e
           USER_PAIR='${{ github.event.inputs.user_creds }}'
           WIFI_PAIR='${{ github.event.inputs.wifi_creds }}'
-          USERNAME="${USER_PAIR%%:*}"
-          USERPASS="${USER_PAIR#*:}"
-          WIFI_SSID="${WIFI_PAIR%%:*}"
-          WIFI_PASSWORD="${WIFI_PAIR#*:}"
-          echo "username=$USERNAME"           >> "$GITHUB_OUTPUT"
-          echo "userpass=$USERPASS"           >> "$GITHUB_OUTPUT"
-          echo "wifi_ssid=$WIFI_SSID"         >> "$GITHUB_OUTPUT"
-          echo "wifi_password=$WIFI_PASSWORD" >> "$GITHUB_OUTPUT"
+          NET='${{ github.event.inputs.net_ipv4 }}'
+          SSH='${{ github.event.inputs.ssh_options }}'
 
-      - name: Parse static IPv4 tuple
-        id: net
-        shell: bash
-        run: |
-          set -e
-          TUPLE='${{ github.event.inputs.net_ipv4 }}'
-          IP="${TUPLE%%:*}"
-          REST="${TUPLE#*:}"
-          GW="${REST%%:*}"
-          DNS="${REST#*:}"
-          echo "static_ip=$IP" >> "$GITHUB_OUTPUT"
-          echo "gateway=$GW"   >> "$GITHUB_OUTPUT"
-          echo "dns=$DNS"      >> "$GITHUB_OUTPUT"
+          USERNAME="${USER_PAIR%%:*}"; USERPASS="${USER_PAIR#*:}"
+          WIFI_SSID="${WIFI_PAIR%%:*}"; WIFI_PASSWORD="${WIFI_PAIR#*:}"
 
-      - name: Parse SSH options
-        id: ssh
-        shell: bash
-        run: |
-          set -e
-          OPT='${{ github.event.inputs.ssh_options }}'
-          IFS=':' read -r PERMIT_ROOT PASSAUTH PUBKEY <<<"$OPT"
-          case "$PERMIT_ROOT" in
-            true|yes|on) PRL="yes" ;;
-            prohibit-password|prohibit_password|prohibit) PRL="prohibit-password" ;;
-            false|no|off) PRL="no" ;;
-            *) PRL="$PERMIT_ROOT" ;;
-          esac
-          case "$PASSAUTH" in true|yes|on) PA="yes" ;; false|no|off) PA="no" ;; *) PA="$PASSAUTH" ;; esac
-          case "$PUBKEY"   in true|yes|on) PK="yes" ;; false|no|off) PK="no" ;; *) PK="$PUBKEY"   ;; esac
-          echo "permit_root_login=$PRL"  >> "$GITHUB_OUTPUT"
-          echo "password_auth=$PA"       >> "$GITHUB_OUTPUT"
-          echo "pubkey_auth=$PK"         >> "$GITHUB_OUTPUT"
+          IP="${NET%%:*}"; REST="${NET#*:}"; GW="${REST%%:*}"; DNS="${REST#*:}"
 
-      - name: Prepare overlays (Pi only)
+          IFS=':' read -r R P K <<<"$SSH"
+          case "$R" in true|yes|on) R="yes" ;; prohibit-password|prohibit_password|prohibit) R="prohibit-password" ;; false|no|off) R="no" ;; esac
+          case "$P" in true|yes|on) P="yes" ;; false|no|off) P="no" ;; esac
+          case "$K" in true|yes|on) K="yes" ;; false|no|off) K="no" ;; esac
+
+          {
+            echo "username=$USERNAME"
+            echo "userpass=$USERPASS"
+            echo "wifi_ssid=$WIFI_SSID"
+            echo "wifi_password=$WIFI_PASSWORD"
+            echo "static_ip=$IP"
+            echo "gateway=$GW"
+            echo "dns=$DNS"
+            echo "permit_root_login=$R"
+            echo "password_auth=$P"
+            echo "pubkey_auth=$K"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Prepare overlays (Pi)
         if: ${{ steps.tgt.outputs.target == 'pi' }}
         shell: bash
         env:
           WIFI_COUNTRY:       ${{ github.event.inputs.wifi_country }}
           TIMEZONE:           ${{ github.event.inputs.timezone }}
           KEYBOARD:           ${{ github.event.inputs.keyboard }}
-          STATIC_IP:          ${{ steps.net.outputs.static_ip }}
-          GATEWAY:            ${{ steps.net.outputs.gateway }}
-          DNS:                ${{ steps.net.outputs.dns }}
-          PERMIT_ROOT_LOGIN:  ${{ steps.ssh.outputs.permit_root_login }}
-          PASSWORD_AUTH:      ${{ steps.ssh.outputs.password_auth }}
-          PUBKEY_AUTH:        ${{ steps.ssh.outputs.pubkey_auth }}
-          USERNAME:           ${{ steps.creds.outputs.username }}
-          USERPASS:           ${{ steps.creds.outputs.userpass }}
-          WIFI_SSID:          ${{ steps.creds.outputs.wifi_ssid }}
-          WIFI_PASSWORD:      ${{ steps.creds.outputs.wifi_password }}
+          USERNAME:           ${{ steps.cfg.outputs.username }}
+          USERPASS:           ${{ steps.cfg.outputs.userpass }}
+          WIFI_SSID:          ${{ steps.cfg.outputs.wifi_ssid }}
+          WIFI_PASSWORD:      ${{ steps.cfg.outputs.wifi_password }}
+          STATIC_IP:          ${{ steps.cfg.outputs.static_ip }}
+          GATEWAY:            ${{ steps.cfg.outputs.gateway }}
+          DNS:                ${{ steps.cfg.outputs.dns }}
+          PERMIT_ROOT_LOGIN:  ${{ steps.cfg.outputs.permit_root_login }}
+          PASSWORD_AUTH:      ${{ steps.cfg.outputs.password_auth }}
+          PUBKEY_AUTH:        ${{ steps.cfg.outputs.pubkey_auth }}
         run: |
           set -e
           BASE="pi-gen/stage4/05-local-github"
           mkdir -p "$BASE/files/etc/ssh/sshd_config.d" "$BASE/files/etc/wpa_supplicant" "$BASE/files/etc/default" "$BASE/files/etc" "$BASE/files/etc/dhcpcd.conf.d"
 
-          # sshd fragment
           printf "PermitRootLogin %s\nPasswordAuthentication %s\nPubkeyAuthentication %s\n" \
             "${PERMIT_ROOT_LOGIN}" "${PASSWORD_AUTH}" "${PUBKEY_AUTH}" \
             > "$BASE/files/etc/ssh/sshd_config.d/local-github.conf"
 
-          # wpa_supplicant
           printf "ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev\nupdate_config=1\ncountry=%s\n\nnetwork={\n  ssid=\"%s\"\n  psk=\"%s\"\n}\n" \
             "${WIFI_COUNTRY}" "${WIFI_SSID}" "${WIFI_PASSWORD}" \
             > "$BASE/files/etc/wpa_supplicant/wpa_supplicant.conf"
 
-          # timezone + keyboard
           printf "%s\n" "${TIMEZONE}" > "$BASE/files/etc/timezone"
           printf "XKBLAYOUT=\"%s\"\n" "${KEYBOARD}" > "$BASE/files/etc/default/keyboard"
 
-          # static IPv4 via dhcpcd
           printf "interface eth0\nstatic ip_address=%s/24\nstatic routers=%s\nstatic domain_name_servers=%s\n" \
             "${STATIC_IP}" "${GATEWAY}" "${DNS}" \
             > "$BASE/files/etc/dhcpcd.conf.d/local-github.conf"
 
-          # post boot adjustments
           cat > "$BASE/00-run.sh" <<'EOS'
 #!/bin/bash
 set -e
