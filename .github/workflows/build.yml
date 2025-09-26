@@ -1,4 +1,4 @@
-name: Build Local-github (Pi Clean)
+name: Build Local-github (Pi Cleanest)
 
 on:
   workflow_dispatch:
@@ -158,39 +158,28 @@ jobs:
         run: |
           set -e
           BASE="pi-gen/stage4/05-local-github"
-          mkdir -p "$BASE/files/etc/ssh/sshd_config.d" \
-                   "$BASE/files/etc/wpa_supplicant" \
-                   "$BASE/files/etc/default" \
-                   "$BASE/files/etc" \
-                   "$BASE/files/etc/dhcpcd.conf.d"
+          mkdir -p "$BASE/files/etc/ssh/sshd_config.d" "$BASE/files/etc/wpa_supplicant" "$BASE/files/etc/default" "$BASE/files/etc" "$BASE/files/etc/dhcpcd.conf.d"
 
-          printf '%s\n' \
-"PermitRootLogin ${PERMIT_ROOT_LOGIN}" \
-"PasswordAuthentication ${PASSWORD_AUTH}" \
-"PubkeyAuthentication ${PUBKEY_AUTH}" \
-          > "$BASE/files/etc/ssh/sshd_config.d/local-github.conf"
+          # sshd fragment
+          printf "PermitRootLogin %s\nPasswordAuthentication %s\nPubkeyAuthentication %s\n" \
+            "${PERMIT_ROOT_LOGIN}" "${PASSWORD_AUTH}" "${PUBKEY_AUTH}" \
+            > "$BASE/files/etc/ssh/sshd_config.d/local-github.conf"
 
-          cat > "$BASE/files/etc/wpa_supplicant/wpa_supplicant.conf" <<EOF
-ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
-update_config=1
-country=${WIFI_COUNTRY}
+          # wpa_supplicant
+          printf "ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev\nupdate_config=1\ncountry=%s\n\nnetwork={\n  ssid=\"%s\"\n  psk=\"%s\"\n}\n" \
+            "${WIFI_COUNTRY}" "${WIFI_SSID}" "${WIFI_PASSWORD}" \
+            > "$BASE/files/etc/wpa_supplicant/wpa_supplicant.conf"
 
-network={
-  ssid="${WIFI_SSID}"
-  psk="${WIFI_PASSWORD}"
-}
-EOF
+          # timezone + keyboard
+          printf "%s\n" "${TIMEZONE}" > "$BASE/files/etc/timezone"
+          printf "XKBLAYOUT=\"%s\"\n" "${KEYBOARD}" > "$BASE/files/etc/default/keyboard"
 
-          echo "${TIMEZONE}" > "$BASE/files/etc/timezone"
-          echo "XKBLAYOUT=\"${KEYBOARD}\"" > "$BASE/files/etc/default/keyboard"
+          # static IPv4 via dhcpcd
+          printf "interface eth0\nstatic ip_address=%s/24\nstatic routers=%s\nstatic domain_name_servers=%s\n" \
+            "${STATIC_IP}" "${GATEWAY}" "${DNS}" \
+            > "$BASE/files/etc/dhcpcd.conf.d/local-github.conf"
 
-          cat > "$BASE/files/etc/dhcpcd.conf.d/local-github.conf" <<EOF
-interface eth0
-static ip_address=${STATIC_IP}/24
-static routers=${GATEWAY}
-static domain_name_servers=${DNS}
-EOF
-
+          # post boot adjustments
           cat > "$BASE/00-run.sh" <<'EOS'
 #!/bin/bash
 set -e
